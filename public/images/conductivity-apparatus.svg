@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="title desc">
+  <title id="title">Diagram alat uji daya hantar listrik</title>
+  <desc id="desc">Baterai, lampu, kabel, dan elektroda pada gelas larutan elektrolit.</desc>
+  <rect width="720" height="380" rx="28" fill="#f3f8fc"/>
+  <rect x="35" y="125" width="125" height="82" rx="14" fill="#203864"/>
+  <text x="97" y="158" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="20" font-weight="700">Baterai</text>
+  <text x="97" y="185" text-anchor="middle" fill="#dceeff" font-family="Arial,sans-serif" font-size="17">tegangan rendah</text>
+  <path d="M160 165h90" fill="none" stroke="#203864" stroke-width="7"/>
+  <path d="M250 165c0-47 82-47 82 0" fill="none" stroke="#203864" stroke-width="7"/>
+  <circle cx="291" cy="165" r="25" fill="#fff0b3" stroke="#f4a340" stroke-width="6"/>
+  <path d="M332 165h235v60" fill="none" stroke="#203864" stroke-width="7"/>
+  <path d="M567 165h75v60" fill="none" stroke="#203864" stroke-width="7"/>
+  <path d="M490 225h175l-15 115h-145z" fill="#dceeff" stroke="#203864" stroke-width="5"/>
+  <path d="M480 270h195" stroke="#16a6a1" stroke-width="5"/>
+  <path d="M535 200v88M615 200v88" stroke="#f26b5b" stroke-width="8"/>
+  <g fill="#16a6a1" font-family="Arial,sans-serif" font-size="21" font-weight="700">
+    <circle cx="565" cy="302" r="17"/><text x="565" y="309" text-anchor="middle" fill="white">+</text>
+    <circle cx="595" cy="322" r="17"/><text x="595" y="329" text-anchor="middle" fill="white">−</text>
+    <circle cx="630" cy="298" r="17"/><text x="630" y="305" text-anchor="middle" fill="white">+</text>
+  </g>
+  <text x="290" y="220" text-anchor="middle" fill="#203864" font-family="Arial,sans-serif" font-size="17">lampu indikator</text>
+  <text x="577" y="365" text-anchor="middle" fill="#5a6679" font-family="Arial,sans-serif" font-size="17">Elektroda dicelupkan ke larutan</text>
+  <text x="95" y="240" text-anchor="middle" fill="#5a6679" font-family="Arial,sans-serif" font-size="17">sumber arus DC</text>
+</svg>

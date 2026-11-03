@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react'
 import Navbar from './components/Navbar.jsx'
 import HeroSection from './components/HeroSection.jsx'
 import TopicCards from './components/TopicCards.jsx'
+import ModuleLesson from './components/ModuleLesson.jsx'
+import Quiz from './components/Quiz.jsx'
 
 export default function Home() {
   const [activeNav, setActiveNav] = useState('beranda')
   const [activeModal, setActiveModal] = useState(null) // 'modul-1', 'modul-2', 'modul-3', 'kuis', 'lab'
+  const [quizModuleId, setQuizModuleId] = useState(null)
   const [completedModules, setCompletedModules] = useState(() => {
     try {
       const saved = localStorage.getItem('electrofun_progress')
@@ -42,7 +45,8 @@ export default function Home() {
   const handleNavigate = (targetId) => {
     setActiveNav(targetId)
     if (targetId === 'kuis') {
-      setActiveModal('kuis')
+      setQuizModuleId(null)
+      setActiveModal('quiz-page')
       return
     }
     if (targetId === 'laboratorium') {
@@ -59,23 +63,25 @@ export default function Home() {
   }
 
   const handleStartLearning = () => {
-    setActiveModal('modul-1')
+    setActiveModal('module-page:modul-1')
   }
 
   const handleOpenLab = () => {
-    const heroElem = document.getElementById('beranda')
-    if (heroElem) {
-      heroElem.scrollIntoView({ behavior: 'smooth' })
-    }
-    setActiveModal('lab-guide')
+    setActiveModal('module-page:modul-2')
   }
 
   const handleSelectModule = (modId) => {
-    setActiveModal(modId)
+    setActiveModal(`module-page:${modId}`)
+  }
+
+  const handleStartQuiz = (moduleId = null) => {
+    setQuizModuleId(moduleId)
+    setActiveModal('quiz-page')
   }
 
   const closeModal = () => {
     setActiveModal(null)
+    setQuizModuleId(null)
   }
 
   // Close modal on Escape key
@@ -273,8 +279,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive Modal Details */}
-      {activeModal && (
+      {activeModal?.startsWith('module-page:') && (
+        <ModuleLesson
+          moduleId={activeModal.split(':')[1]}
+          completedModules={completedModules}
+          onClose={closeModal}
+          onComplete={handleToggleModuleProgress}
+          onSelectModule={handleSelectModule}
+          onStartQuiz={handleStartQuiz}
+        />
+      )}
+      {activeModal === 'quiz-page' && (
+        <Quiz
+          key={quizModuleId || 'module-picker'}
+          moduleId={quizModuleId}
+          onSelectModule={setQuizModuleId}
+          onClose={closeModal}
+        />
+      )}
+
+      {/* Legacy quick preview */}
+      {activeModal && !activeModal.startsWith('module-page:') && activeModal !== 'quiz-page' && (
         <div
           className="modal-backdrop"
           onClick={closeModal}
@@ -464,42 +489,7 @@ export default function Home() {
 
             {/* Content for Kuis */}
             {activeModal === 'kuis' && (
-              <div>
-                <span className="apparatus-status-pill weak" style={{ marginBottom: '0.75rem', display: 'inline-block' }}>
-                  Evaluasi Mandiri • Soal Konseptual
-                </span>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-navy)', marginBottom: '0.75rem' }}>
-                  Kuis Singkat Pemahaman Konsep
-                </h3>
-                <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', marginBottom: '1.25rem' }}>
-                  Uji pemahamanmu dengan soal berbasis miskonsepsi berikut:
-                </p>
-
-                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
-                  <p style={{ fontWeight: '700', color: 'var(--color-navy)', fontSize: '0.94rem', marginBottom: '0.85rem' }}>
-                    Dua gelas kimia berisi larutan dengan konsentrasi yang sama. Gelas A berisi larutan NaCl, sedangkan Gelas B berisi larutan gula (sukrosa). Keduanya tampak jernih dan homogen. Pernyataan ilmiah yang paling tepat adalah ...
-                  </p>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                    <div style={{ padding: '0.65rem 0.85rem', background: 'var(--color-green-feedback)', border: '1.5px solid #22c55e', borderRadius: 'var(--radius-sm)', fontSize: '0.86rem', color: '#14532d', fontWeight: '600' }}>
-                      ✓ Pilihan Tepat: Larutan NaCl menghantarkan listrik karena terurai menjadi ion Na⁺ dan Cl⁻ yang bebas bergerak, sedangkan gula tetap berupa molekul netral.
-                    </div>
-                    <div style={{ padding: '0.55rem 0.85rem', background: '#f1f5f9', borderRadius: 'var(--radius-sm)', fontSize: '0.84rem', color: '#64748b' }}>
-                      ✗ Distraktor: Kedua larutan menghantarkan listrik karena sama-sama zat terlarut yang larut merata. (Salah: larut ≠ menghasilkan ion!)
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={closeModal}
-                  >
-                    Kembali ke Beranda
-                  </button>
-                </div>
-              </div>
+              <Quiz />
             )}
           </div>
         </div>
@@ -534,7 +524,7 @@ export default function Home() {
                 <li><a href="#materi" onClick={(e) => { e.preventDefault(); handleNavigate('materi'); }}>Kenali Larutan (Modul 1)</a></li>
                 <li><a href="#laboratorium" onClick={(e) => { e.preventDefault(); handleNavigate('laboratorium'); }}>Laboratorium Mini (Modul 2)</a></li>
                 <li><a href="#materi" onClick={(e) => { e.preventDefault(); handleSelectModule('modul-3'); }}>Jelajahi Ion (Modul 3)</a></li>
-                <li><a href="#kuis" onClick={(e) => { e.preventDefault(); setActiveModal('kuis'); }}>Kuis Evaluasi</a></li>
+                <li><a href="#kuis" onClick={(e) => { e.preventDefault(); handleStartQuiz(); }}>Kuis Evaluasi</a></li>
               </ul>
             </div>
 

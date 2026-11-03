@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 380" role="img" aria-labelledby="title desc">
+  <title id="title">Perbandingan partikel larutan garam dan gula</title>
+  <desc id="desc">Larutan garam mengandung ion positif dan negatif, sedangkan larutan gula mengandung molekul netral.</desc>
+  <rect width="720" height="380" rx="28" fill="#f3f8fc"/>
+  <text x="180" y="48" text-anchor="middle" fill="#203864" font-family="Arial,sans-serif" font-size="24" font-weight="700">Larutan garam</text>
+  <text x="540" y="48" text-anchor="middle" fill="#203864" font-family="Arial,sans-serif" font-size="24" font-weight="700">Larutan gula</text>
+  <path d="M75 100h210l-20 210a18 18 0 0 1-18 16H113a18 18 0 0 1-18-16z" fill="#dceeff" stroke="#203864" stroke-width="5"/>
+  <path d="M435 100h210l-20 210a18 18 0 0 1-18 16H473a18 18 0 0 1-18-16z" fill="#fff0b3" stroke="#203864" stroke-width="5"/>
+  <path d="M88 195h183" stroke="#16a6a1" stroke-width="4"/>
+  <path d="M448 195h183" stroke="#f4a340" stroke-width="4"/>
+  <g font-family="Arial,sans-serif" font-size="21" font-weight="700" text-anchor="middle">
+    <circle cx="130" cy="155" r="25" fill="#16a6a1"/><text x="130" y="163" fill="white">Na⁺</text>
+    <circle cx="220" cy="230" r="25" fill="#203864"/><text x="220" y="238" fill="white">Cl⁻</text>
+    <circle cx="155" cy="270" r="25" fill="#16a6a1"/><text x="155" y="278" fill="white">Na⁺</text>
+    <circle cx="225" cy="145" r="25" fill="#203864"/><text x="225" y="153" fill="white">Cl⁻</text>
+    <rect x="485" y="135" width="92" height="42" rx="21" fill="#8a6dce"/><text x="531" y="163" fill="white">gula</text>
+    <rect x="510" y="215" width="92" height="42" rx="21" fill="#8a6dce"/><text x="556" y="243" fill="white">gula</text>
+    <rect x="470" y="270" width="92" height="42" rx="21" fill="#8a6dce"/><text x="516" y="298" fill="white">gula</text>
+  </g>
+  <text x="180" y="355" text-anchor="middle" fill="#5a6679" font-family="Arial,sans-serif" font-size="17">Ion bergerak → menghantarkan arus</text>
+  <text x="540" y="355" text-anchor="middle" fill="#5a6679" font-family="Arial,sans-serif" font-size="17">Molekul netral → tidak menghantarkan</text>
+</svg>
