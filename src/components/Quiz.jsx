@@ -1,16 +1,65 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { courseModules, quizQuestions } from '../data/database.js'
 import './Quiz.css'
 
-export default function Quiz({ moduleId, onSelectModule, onClose }) {
+const STORAGE_KEY = 'quiz-answers'
+
+// Safely get all saved answers from localStorage
+function getStoredAnswers() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export default function Quiz({ moduleId = null, onSelectModule = () => {}, onClose = () => {} }) {
   const module = courseModules.find((item) => item.id === moduleId)
   const questions = quizQuestions.filter((question) => question.modulId === moduleId)
-  const [questionIndex, setQuestionIndex] = useState(0)
-  const [selectedOption, setSelectedOption] = useState('')
-  const [checkedOption, setCheckedOption] = useState('')
-  const [score, setScore] = useState(0)
 
+  // Initialize all answers from localStorage key 'quiz-answers'
+  const [userAnswers, setUserAnswers] = useState(getStoredAnswers)
+
+  // Initialize question index from localStorage if available
+  const [questionIndex, setQuestionIndex] = useState(() => {
+    try {
+      const savedIndex = localStorage.getItem('electrofun_quiz_current_index')
+      if (savedIndex !== null) {
+        const idx = parseInt(savedIndex, 10)
+        if (!isNaN(idx) && idx >= 0 && idx < questions.length) {
+          return idx
+        }
+      }
+    } catch {}
+    return 0
+  })
+
+  const [checkedOption, setCheckedOption] = useState('')
+
+  // Calculate score based on answers in localStorage
+  const [score, setScore] = useState(() => {
+    const answers = getStoredAnswers()
+    return questions.reduce((acc, q) => {
+      return acc + (answers[q.id] === q.jawabanBenar ? 1 : 0)
+    }, 0)
+  })
+
+  // Current question and derived selectedOption
   const question = questions[questionIndex]
+  const selectedOption = question ? userAnswers[question.id] || userAnswers[questionIndex] || userAnswers[String(questionIndex)] || '' : ''
+
+  // Persist current question index
+  useEffect(() => {
+    try {
+      if (moduleId) {
+        localStorage.setItem('electrofun_quiz_current_index', String(questionIndex))
+      }
+    } catch {}
+  }, [questionIndex, moduleId])
+
   const isCorrect = checkedOption === question?.jawabanBenar
   const isComplete = questions.length > 0 && questionIndex === questions.length
   const completedQuestions = Math.min(questionIndex + (isCorrect ? 1 : 0), questions.length)
@@ -24,25 +73,44 @@ export default function Quiz({ moduleId, onSelectModule, onClose }) {
     }
   }
 
+  // Setiap kali user memilih jawaban, langsung simpan ke localStorage dengan key quiz-answers
   const handleSelectOption = (optionId) => {
-    setSelectedOption(optionId)
     setCheckedOption('')
+    if (!question) return
+
+    const newAnswers = { ...userAnswers, [question.id]: optionId }
+    setUserAnswers(newAnswers)
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newAnswers))
+    } catch (err) {
+      console.error('Failed to save quiz answers to localStorage:', err)
+    }
   }
 
   const handleNextQuestion = () => {
     setQuestionIndex((currentIndex) => currentIndex + 1)
-    setSelectedOption('')
     setCheckedOption('')
   }
 
+  // Reset / Ulangi Kuis: hapus jawaban di localStorage dan reset state
   const handleRestart = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem('electrofun_quiz_current_index')
+    } catch (err) {
+      console.error('Failed to clear quiz answers:', err)
+    }
+    setUserAnswers({})
     setQuestionIndex(0)
-    setSelectedOption('')
     setCheckedOption('')
     setScore(0)
   }
 
   if (!module) {
+    const answers = getStoredAnswers()
+    const hasSavedAnswers = Object.keys(answers).length > 0
+
     return (
       <div className="quiz-page" role="dialog" aria-modal="true" aria-labelledby="quiz-picker-title">
         <header className="quiz-page-header">
@@ -50,6 +118,16 @@ export default function Quiz({ moduleId, onSelectModule, onClose }) {
             ← Kembali ke beranda
           </button>
           <span>Pilih modul untuk mulai mengerjakan</span>
+          {hasSavedAnswers && (
+            <button
+              type="button"
+              className="quiz-close-button"
+              onClick={handleRestart}
+              title="Hapus semua jawaban tersimpan"
+            >
+              Reset / Ulangi Kuis
+            </button>
+          )}
         </header>
         <main className="quiz-page-content">
           <div className="quiz-picker-heading">
@@ -122,9 +200,14 @@ export default function Quiz({ moduleId, onSelectModule, onClose }) {
                 ? 'Luar biasa, semua soal berhasil dijawab dengan benar!'
                 : 'Terus berlatih. Baca kembali cara pengerjaan pada setiap jawaban benar.'}
             </div>
-            <div className="quiz-actions">
-              <button type="button" className="btn-primary" onClick={handleRestart}>
-                Ulangi Kuis
+            <div className="quiz-actions" style={{ justifyContent: 'center' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleRestart}
+                id="btn-restart-quiz"
+              >
+                Reset / Ulangi Kuis
               </button>
             </div>
           </section>
@@ -227,21 +310,31 @@ export default function Quiz({ moduleId, onSelectModule, onClose }) {
           )}
 
           <div className="quiz-actions">
-            {isCorrect ? (
-              <button type="button" className="btn-primary" onClick={handleNextQuestion}>
-                {questionIndex === questions.length - 1 ? 'Lihat Hasil' : 'Soal Berikutnya'}
-                <span aria-hidden="true"> →</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={handleCheckAnswer}
-                disabled={!selectedOption}
-              >
-                Periksa Jawaban
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleRestart}
+              id="btn-reset-quiz"
+            >
+              Reset / Ulangi Kuis
+            </button>
+            <div className="quiz-actions-right">
+              {isCorrect ? (
+                <button type="button" className="btn-primary" onClick={handleNextQuestion}>
+                  {questionIndex === questions.length - 1 ? 'Lihat Hasil' : 'Soal Berikutnya'}
+                  <span aria-hidden="true"> →</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleCheckAnswer}
+                  disabled={!selectedOption}
+                >
+                  Periksa Jawaban
+                </button>
+              )}
+            </div>
           </div>
         </section>
       </main>
