@@ -272,6 +272,15 @@ a {
   color: var(--color-navy);
 }
 
+.mobile-nav-list button.mobile-nav-link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 /* Buttons */
 .btn-primary {
   display: inline-flex;
@@ -1059,6 +1068,10 @@ a {
 
 @media (max-width: 768px) {
   .navbar-nav {
+    display: none;
+  }
+
+  .navbar-actions > .btn-primary {
     display: none;
   }
 

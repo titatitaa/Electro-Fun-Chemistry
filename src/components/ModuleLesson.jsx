@@ -1,5 +1,13 @@
-import { courseModules } from '../data/database.js'
+import { courseModules, courseReferences, moduleLearningSupports } from '../data/database.js'
 import './ModuleLesson.css'
+
+const courseConceptMap = [
+  'Zat terlarut + pelarut membentuk campuran homogen',
+  'Pelarutan menyebarkan partikel; struktur zat menentukan apakah ion terpisah, terbentuk, atau tidak terbentuk',
+  'Ion bergerak membawa arus di dalam larutan',
+  'Jumlah, muatan, dan mobilitas ion serta suhu dan konsentrasi memengaruhi daya hantar',
+  'Klasifikasi: elektrolit kuat, elektrolit lemah, atau nonelektrolit',
+]
 
 export default function ModuleLesson({
   moduleId,
@@ -8,6 +16,7 @@ export default function ModuleLesson({
   onComplete,
   onSelectModule,
   onStartQuiz,
+  onOpenVirtualLab,
 }) {
   const module = courseModules.find((item) => item.id === moduleId)
   if (!module) return null
@@ -16,6 +25,11 @@ export default function ModuleLesson({
   const previousModule = courseModules[moduleIndex - 1]
   const nextModule = courseModules[moduleIndex + 1]
   const subtopicCount = module.subtopics.length
+  const learningSupport = moduleLearningSupports[moduleId]
+  const lessonSubtopics = module.subtopics.map((subtopic, index) => ({
+    ...subtopic,
+    learningSupport: learningSupport?.subtopics[index],
+  }))
 
   return (
     <div className="lesson-page" role="dialog" aria-modal="true" aria-labelledby="lesson-title">
@@ -38,10 +52,15 @@ export default function ModuleLesson({
             <a className="lesson-start-link" href={`#${module.id}-subbab-1`}>
               Mulai membaca <span aria-hidden="true">↓</span>
             </a>
+            {module.id === 'modul-2' && (
+              <button type="button" className="lesson-start-link lesson-open-lab" onClick={onOpenVirtualLab}>
+                Buka Virtual Lab <span aria-hidden="true">⚗</span>
+              </button>
+            )}
           </div>
           <figure className="lesson-hero-figure">
             <img src={module.image} alt={`Ilustrasi materi: ${module.title}`} />
-            <figcaption>Visualisasi konsep • pilih subbab untuk belajar bertahap</figcaption>
+            <figcaption>Skema pembelajaran lokal; bukan foto dokumentasi eksperimen.</figcaption>
           </figure>
         </div>
 
@@ -84,7 +103,7 @@ export default function ModuleLesson({
 
           <div className="lesson-main-content">
             <div className="lesson-subtopics">
-              {module.subtopics.map((subtopic, index) => (
+              {lessonSubtopics.map((subtopic, index) => (
                 <article
                   className={`lesson-subtopic lesson-subtopic-${(index % 3) + 1}`}
                   id={`${module.id}-subbab-${index + 1}`}
@@ -122,6 +141,51 @@ export default function ModuleLesson({
                         ))}
                       </ul>
                     </div>
+                    {subtopic.learningSupport && (
+                      <section className="lesson-representations" aria-label="Tiga tingkat representasi kimia">
+                        <h3>Menghubungkan tiga representasi kimia</h3>
+                        <div className="lesson-representation-grid">
+                          <div>
+                            <span className="lesson-card-label">MAKROSKOPIS • YANG DIAMATI</span>
+                            <p>{subtopic.learningSupport.macroscopic}</p>
+                          </div>
+                          <div>
+                            <span className="lesson-card-label">SUBMIKROSKOPIS • PARTIKEL</span>
+                            <p>{subtopic.learningSupport.submicroscopic}</p>
+                          </div>
+                          <div>
+                            <span className="lesson-card-label">SIMBOLIK • PERSAMAAN</span>
+                            <p>{subtopic.learningSupport.symbolic}</p>
+                          </div>
+                        </div>
+                        <p className="lesson-inline-citation">{subtopic.learningSupport.citation}</p>
+                        {subtopic.learningSupport.visual && (
+                          <figure className="lesson-sourced-figure">
+                            <img
+                              src={subtopic.learningSupport.visual.src}
+                              alt={subtopic.learningSupport.visual.alt}
+                              loading="lazy"
+                            />
+                            <figcaption>
+                              {subtopic.learningSupport.visual.caption}{' '}
+                              Sumber: {subtopic.learningSupport.visual.author},{' '}
+                              <a href={subtopic.learningSupport.visual.pageUrl} target="_blank" rel="noreferrer">
+                                {subtopic.learningSupport.visual.source}
+                              </a>
+                              . Lisensi{' '}
+                              <a href={subtopic.learningSupport.visual.licenseUrl} target="_blank" rel="noreferrer">
+                                {subtopic.learningSupport.visual.license}
+                              </a>
+                              ; digunakan tanpa adaptasi.
+                            </figcaption>
+                          </figure>
+                        )}
+                        <aside className="lesson-reflection">
+                          <span className="lesson-card-label">PERTANYAAN REFLEKSI</span>
+                          <p>{subtopic.learningSupport.reflection}</p>
+                        </aside>
+                      </section>
+                    )}
                     {subtopic.misconception && (
                       <aside className="lesson-misconception">
                         <span aria-hidden="true">💡</span>
@@ -145,6 +209,121 @@ export default function ModuleLesson({
                 </article>
               ))}
             </div>
+
+            {learningSupport?.applications && (
+              <section className="lesson-support-panel" aria-labelledby="lesson-applications-title">
+                <span className="lesson-section-eyebrow">KIMIA DALAM KEHIDUPAN</span>
+                <h2 id="lesson-applications-title">{learningSupport.applications.title}</h2>
+                <p className="lesson-table-note">{learningSupport.applications.note}</p>
+                <div className="lesson-table-scroll">
+                  <table className="lesson-data-table">
+                    <thead>
+                      <tr><th>Contoh</th><th>Partikel atau proses</th><th>Hubungannya dengan daya hantar</th></tr>
+                    </thead>
+                    <tbody>
+                      {learningSupport.applications.rows.map((row) => (
+                        <tr key={row[0]}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <figure className="lesson-sourced-figure lesson-application-figure">
+                  <img
+                    src={learningSupport.applications.image.src}
+                    alt={learningSupport.applications.image.alt}
+                    loading="lazy"
+                  />
+                  <figcaption>
+                    {learningSupport.applications.image.caption} Sumber:{' '}
+                    <a href={learningSupport.applications.image.pageUrl} target="_blank" rel="noreferrer">
+                      {learningSupport.applications.image.source}
+                    </a>, {learningSupport.applications.image.author}. Lisensi{' '}
+                    <a href={learningSupport.applications.image.licenseUrl} target="_blank" rel="noreferrer">
+                      {learningSupport.applications.image.license}
+                    </a>.
+                  </figcaption>
+                </figure>
+              </section>
+            )}
+
+            {learningSupport?.observationTable && (
+              <section className="lesson-support-panel" aria-labelledby="lesson-observation-title">
+                <span className="lesson-section-eyebrow">DATA UNTUK BERPIKIR KRITIS</span>
+                <h2 id="lesson-observation-title">{learningSupport.observationTable.title}</h2>
+                <p className="lesson-table-label">{learningSupport.observationTable.label}</p>
+                <div className="lesson-table-scroll">
+                  <table className="lesson-data-table">
+                    <thead>
+                      <tr>
+                        {learningSupport.observationTable.headers.map((header) => <th key={header}>{header}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {learningSupport.observationTable.rows.map((row) => (
+                        <tr key={row[0]}>{row.map((cell) => <td key={cell}>{cell}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="lesson-table-note">{learningSupport.observationTable.interpretation}</p>
+              </section>
+            )}
+
+            {learningSupport?.structureTable && (
+              <section className="lesson-support-panel" aria-labelledby="lesson-structure-title">
+                <span className="lesson-section-eyebrow">STRUKTUR MENJELASKAN SIFAT</span>
+                <h2 id="lesson-structure-title">{learningSupport.structureTable.title}</h2>
+                <div className="lesson-table-scroll">
+                  <table className="lesson-data-table">
+                    <thead>
+                      <tr>
+                        {learningSupport.structureTable.headers.map((header) => <th key={header}>{header}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {learningSupport.structureTable.rows.map((row) => (
+                        <tr key={row[0]}>{row.map((cell) => <td key={cell}>{cell}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="lesson-table-note">{learningSupport.structureTable.interpretation}</p>
+              </section>
+            )}
+
+            {learningSupport?.factorsTable && (
+              <section className="lesson-support-panel" aria-labelledby="lesson-factors-title">
+                <span className="lesson-section-eyebrow">MENGAPA NILAI DAYA HANTAR BERBEDA?</span>
+                <h2 id="lesson-factors-title">{learningSupport.factorsTable.title}</h2>
+                <div className="lesson-table-scroll">
+                  <table className="lesson-data-table">
+                    <thead>
+                      <tr>
+                        {learningSupport.factorsTable.headers.map((header) => <th key={header}>{header}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {learningSupport.factorsTable.rows.map((row) => (
+                        <tr key={row[0]}>{row.map((cell) => <td key={cell}>{cell}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="lesson-table-note">{learningSupport.factorsTable.interpretation}</p>
+              </section>
+            )}
+
+            <section className="lesson-concept-map" aria-labelledby="lesson-concept-map-title">
+              <span className="lesson-section-eyebrow">RANGKUMAN VISUAL</span>
+              <h2 id="lesson-concept-map-title">Peta konsep: dari pelarutan ke daya hantar</h2>
+              <ol>
+                {courseConceptMap.map((step) => <li key={step}>{step}</li>)}
+              </ol>
+              <p>Kuat atau lemahnya elektrolit menyatakan banyaknya zat yang membentuk ion, bukan pekat atau encernya larutan.</p>
+            </section>
 
             {module.sources?.length > 0 && (
               <section className="lesson-sources" aria-labelledby="lesson-sources-title">
@@ -170,12 +349,31 @@ export default function ModuleLesson({
                   ))}
                 </ol>
                 <p className="lesson-license-note">
-                  Rujukan OpenStax Chemistry 2e tersedia dengan lisensi
-                  {' '}<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>.
-                  Konten pada halaman ini merupakan parafrasa dan materi belajar tambahan, bukan salinan teks atau gambar buku.
+                  Buku OpenStax Chemistry 2e berlisensi
+                  {' '}<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noreferrer">CC BY-NC-SA 4.0</a>.
+                  Materi ini ditulis ulang; gambar eksternal diberi atribusi dan keterangan lisensi tersendiri.
                 </p>
               </section>
             )}
+
+            <section className="lesson-sources lesson-research-sources" aria-labelledby="lesson-research-title">
+              <div className="lesson-sources-heading">
+                <span aria-hidden="true">🧾</span>
+                <div>
+                  <span className="lesson-section-eyebrow">PENELITIAN PENDIDIKAN</span>
+                  <h2 id="lesson-research-title">Daftar pustaka (APA edisi ke-7)</h2>
+                </div>
+              </div>
+              <ol className="lesson-reference-list">
+                {courseReferences.map((reference) => (
+                  <li key={reference.url}>
+                    {reference.citation}{' '}
+                    <a href={reference.url} target="_blank" rel="noreferrer">{reference.linkText}</a>
+                    <span>{reference.type}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </div>
         </div>
 

@@ -1,19 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { courseModules, quizQuestions } from '../data/database.js'
 import './Quiz.css'
 
-export default function Quiz({ moduleId, onSelectModule, onClose }) {
+export default function Quiz({ moduleId, onSelectModule, onClose, onComplete }) {
   const module = courseModules.find((item) => item.id === moduleId)
   const questions = quizQuestions.filter((question) => question.modulId === moduleId)
   const [questionIndex, setQuestionIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState('')
   const [checkedOption, setCheckedOption] = useState('')
   const [score, setScore] = useState(0)
+  const completionReported = useRef(false)
 
   const question = questions[questionIndex]
   const isCorrect = checkedOption === question?.jawabanBenar
   const isComplete = questions.length > 0 && questionIndex === questions.length
   const completedQuestions = Math.min(questionIndex + (isCorrect ? 1 : 0), questions.length)
+
+  useEffect(() => {
+    if (!isComplete || completionReported.current) return
+    completionReported.current = true
+    onComplete?.({
+      moduleId,
+      moduleTitle: module?.title || moduleId,
+      score,
+      total: questions.length,
+    })
+  }, [isComplete, module, moduleId, onComplete, questions.length, score])
 
   const handleCheckAnswer = () => {
     if (!selectedOption) return
@@ -36,6 +48,7 @@ export default function Quiz({ moduleId, onSelectModule, onClose }) {
   }
 
   const handleRestart = () => {
+    completionReported.current = false
     setQuestionIndex(0)
     setSelectedOption('')
     setCheckedOption('')
