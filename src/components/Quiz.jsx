@@ -2,14 +2,66 @@ import { useEffect, useRef, useState } from 'react'
 import { courseModules, quizQuestions } from '../data/database.js'
 import './Quiz.css'
 
+function getSavedQuizState(moduleId) {
+  if (!moduleId) return null
+  try {
+    const raw = localStorage.getItem(`quiz_${moduleId}`) || localStorage.getItem(`quiz-${moduleId}`)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed && typeof parsed === 'object') {
+        return parsed
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+  return null
+}
+
 export default function Quiz({ moduleId, onSelectModule, onClose, onComplete }) {
   const module = courseModules.find((item) => item.id === moduleId)
   const questions = quizQuestions.filter((question) => question.modulId === moduleId)
-  const [questionIndex, setQuestionIndex] = useState(0)
-  const [selectedOption, setSelectedOption] = useState('')
-  const [checkedOption, setCheckedOption] = useState('')
-  const [score, setScore] = useState(0)
+
+  const savedState = getSavedQuizState(moduleId)
+
+  const [questionIndex, setQuestionIndex] = useState(() => {
+    const idx = savedState?.questionIndex
+    if (typeof idx === 'number' && !isNaN(idx) && idx >= 0) {
+      return idx
+    }
+    return 0
+  })
+  const [selectedOption, setSelectedOption] = useState(() => {
+    return typeof savedState?.selectedOption === 'string' ? savedState.selectedOption : ''
+  })
+  const [checkedOption, setCheckedOption] = useState(() => {
+    return typeof savedState?.checkedOption === 'string' ? savedState.checkedOption : ''
+  })
+  const [score, setScore] = useState(() => {
+    const sc = savedState?.score
+    if (typeof sc === 'number' && !isNaN(sc) && sc >= 0) {
+      return sc
+    }
+    return 0
+  })
   const completionReported = useRef(false)
+
+  // Simpan questionIndex, selectedOption, checkedOption, dan score ke localStorage dengan key per moduleId
+  useEffect(() => {
+    if (!moduleId) return
+    try {
+      const stateToSave = {
+        questionIndex,
+        selectedOption,
+        checkedOption,
+        score,
+      }
+      localStorage.setItem(`quiz_${moduleId}`, JSON.stringify(stateToSave))
+      localStorage.setItem(`quiz-${moduleId}`, JSON.stringify(stateToSave))
+    } catch {
+      // Ignore error
+    }
+  }, [moduleId, questionIndex, selectedOption, checkedOption, score])
 
   const question = questions[questionIndex]
   const isCorrect = checkedOption === question?.jawabanBenar
@@ -49,6 +101,14 @@ export default function Quiz({ moduleId, onSelectModule, onClose, onComplete }) 
 
   const handleRestart = () => {
     completionReported.current = false
+    try {
+      if (moduleId) {
+        localStorage.removeItem(`quiz_${moduleId}`)
+        localStorage.removeItem(`quiz-${moduleId}`)
+      }
+    } catch {
+      // Ignore error
+    }
     setQuestionIndex(0)
     setSelectedOption('')
     setCheckedOption('')
