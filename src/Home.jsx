@@ -9,12 +9,48 @@ import VirtualLab from './components/VirtualLab.jsx'
 import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
 import { readLearningData, recordLearningActivity, writeLearningData } from './data/learningStore.js'
 import { submitQuizSubmission } from './auth.js'
+import { quizQuestions } from './data/database.js'
 
 export default function Home({ user }) {
   const [activeNav, setActiveNav] = useState('beranda')
-  const [activeModal, setActiveModal] = useState(null) // 'modul-1', 'modul-2', 'modul-3', 'kuis', 'lab'
-  const [learningActivityVersion, setLearningActivityVersion] = useState(0)
-  const [quizModuleId, setQuizModuleId] = useState(null)
+  const [activeModal, setActiveModal] = useState(() => {
+    try {
+      const savedModal = localStorage.getItem('electrofun_active_modal')
+      if (savedModal) return savedModal
+
+      if (typeof window !== 'undefined' && window.location.hash.includes('kuis')) {
+        return 'quiz-page'
+      }
+
+      const savedAnswers = localStorage.getItem('quiz-answers')
+      const wasClosed = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('electrofun_modal_closed') : null
+      if (savedAnswers && !wasClosed) {
+        const parsed = JSON.parse(savedAnswers)
+        if (parsed && Object.keys(parsed).length > 0) {
+          return 'quiz-page'
+        }
+      }
+    } catch {}
+    return null
+  })
+
+  const [quizModuleId, setQuizModuleId] = useState(() => {
+    try {
+      const savedModuleId = localStorage.getItem('electrofun_quiz_module_id')
+      if (savedModuleId) return savedModuleId
+
+      const savedAnswers = localStorage.getItem('quiz-answers')
+      if (savedAnswers) {
+        const parsed = JSON.parse(savedAnswers)
+        const answeredIds = Object.keys(parsed || {})
+        if (answeredIds.length > 0) {
+          const found = quizQuestions.find((q) => q.id === answeredIds[0])
+          if (found) return found.modulId
+        }
+      }
+    } catch {}
+    return null
+  })
   const [completedModules, setCompletedModules] = useState(() => {
     try {
       const saved = localStorage.getItem('electrofun_progress')
@@ -127,12 +163,47 @@ export default function Home({ user }) {
   const handleStartQuiz = (moduleId = null) => {
     setQuizModuleId(moduleId)
     setActiveModal('quiz-page')
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('electrofun_modal_closed')
+      }
+    } catch {}
   }
 
   const closeModal = () => {
     setActiveModal(null)
     setQuizModuleId(null)
+    try {
+      localStorage.removeItem('electrofun_active_modal')
+      localStorage.removeItem('electrofun_quiz_module_id')
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('electrofun_modal_closed', 'true')
+      }
+    } catch {}
   }
+
+  useEffect(() => {
+    try {
+      if (activeModal) {
+        localStorage.setItem('electrofun_active_modal', activeModal)
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('electrofun_modal_closed')
+        }
+      } else {
+        localStorage.removeItem('electrofun_active_modal')
+      }
+    } catch {}
+  }, [activeModal])
+
+  useEffect(() => {
+    try {
+      if (quizModuleId) {
+        localStorage.setItem('electrofun_quiz_module_id', quizModuleId)
+      } else {
+        localStorage.removeItem('electrofun_quiz_module_id')
+      }
+    } catch {}
+  }, [quizModuleId])
 
   // Close modal on Escape key
   useEffect(() => {
@@ -545,7 +616,7 @@ export default function Home({ user }) {
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={() => setActiveModal('kuis')}
+                    onClick={() => handleStartQuiz('modul-3')}
                   >
                     Uji Pemahaman di Kuis →
                   </button>
@@ -555,7 +626,11 @@ export default function Home({ user }) {
 
             {/* Content for Kuis */}
             {activeModal === 'kuis' && (
-              <Quiz />
+              <Quiz
+                moduleId={quizModuleId}
+                onSelectModule={setQuizModuleId}
+                onClose={closeModal}
+              />
             )}
           </div>
         </div>
