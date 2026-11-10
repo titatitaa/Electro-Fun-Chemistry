@@ -8,6 +8,7 @@ import ExpandedCourse from './components/ExpandedCourse.jsx'
 import VirtualLab from './components/VirtualLab.jsx'
 import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
 import { readLearningData, recordLearningActivity, writeLearningData } from './data/learningStore.js'
+import { submitQuizSubmission } from './auth.js'
 
 export default function Home({ user }) {
   const [activeNav, setActiveNav] = useState('beranda')
@@ -99,6 +100,20 @@ export default function Home({ user }) {
       title: 'Menyelesaikan kuis',
       detail: `${result.moduleTitle}: ${result.score}/${result.total} jawaban benar.`,
     }, handleLearningActivity)
+
+    // Jika akun terdaftar / siswa anggota kelas, kirim ke database Firestore agar terbaca di Panel Guru
+    if (user && !user.isGuest && user.role !== 'guest') {
+      submitQuizSubmission({
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        classCode: user.classCode || null,
+        moduleId: result.moduleId,
+        score: result.score,
+        totalQuestions: result.total,
+        answers: result.answers || {}
+      }).catch((err) => console.warn('Gagal sync ke cloud:', err))
+    }
   }
 
   const handleOpenJournal = () => {
