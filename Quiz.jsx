@@ -18,6 +18,24 @@ function getSavedQuizState(moduleId) {
     return null
 }
 
+const STORAGE_KEY = 'quiz-answers'
+
+// Safely get all saved answers
+function getStoredAnswers() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (raw) {
+            const parsed = JSON.parse(raw)
+            if (parsed && typeof parsed === 'object') {
+                return parsed
+            }
+        }
+    } catch {
+        // Ignore error
+    }
+    return {}
+}
+
 export default function Quiz({ moduleId, onSelectModule, onClose, onComplete }) {
     const module = courseModules.find((item) => item.id === moduleId)
     const questions = quizQuestions.filter((question) => question.modulId === moduleId)
