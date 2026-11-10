@@ -142,6 +142,23 @@
   background: var(--color-green-feedback);
 }
 
+.quiz-option.wrong {
+  border-color: #f26b5b;
+  background: var(--color-coral-light);
+  color: #8b2f26;
+}
+
+button.quiz-option {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.quiz-option:disabled {
+  cursor: default;
+}
+
 .quiz-option input {
   flex: 0 0 auto;
   margin-top: 0.35rem;

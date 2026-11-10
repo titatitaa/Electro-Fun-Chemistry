@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearning }) {
+export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearning, onOpenLearningFeatures }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleNavClick = (id, e) => {
@@ -34,7 +34,7 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
           href="#beranda" 
           className="navbar-brand"
           onClick={(e) => handleNavClick('beranda', e)}
-          aria-label="ElectroFun Chemistry Beranda"
+          aria-label="CHEMISTRY LAB Beranda"
         >
           <div className="navbar-logo-wrap" aria-hidden="true">
             {/* Custom Chemistry Icon: Erlenmeyer with spark */}
@@ -48,9 +48,8 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
           </div>
           <div className="navbar-brand-text">
             <span className="navbar-title">
-              <span className="brand-electro">Electro</span>
-              <span className="brand-fun">Fun</span>
-              <span className="brand-chem">Chemistry</span>
+              <span className="brand-electro">CHEMISTRY</span>
+              <span className="brand-fun">LAB</span>
             </span>
             <span className="navbar-tagline">SMA Kelas X • Fase E</span>
           </div>
@@ -116,6 +115,20 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 Kuis
+              </a>
+            </li>
+            <li>
+              <a
+                href="#fitur-belajar"
+                id="nav-link-learning-features"
+                className={`nav-link ${activeNav === 'learning-tools' ? 'active' : ''}`}
+                onClick={(event) => {
+                  event.preventDefault()
+                  setMobileMenuOpen(false)
+                  onOpenLearningFeatures?.()
+                }}
+              >
+                Fitur Belajar
               </a>
             </li>
           </ul>
@@ -199,6 +212,11 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
             >
               Kuis
             </a>
+          </li>
+          <li>
+            <button type="button" className={`mobile-nav-link ${activeNav === 'learning-tools' ? 'active' : ''}`} onClick={() => { setMobileMenuOpen(false); onOpenLearningFeatures?.() }}>
+              Fitur Belajar
+            </button>
           </li>
           <li style={{ marginTop: '0.5rem' }}>
             <button

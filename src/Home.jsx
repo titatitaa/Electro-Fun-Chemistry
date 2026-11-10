@@ -4,9 +4,14 @@ import HeroSection from './components/HeroSection.jsx'
 import TopicCards from './components/TopicCards.jsx'
 import ModuleLesson from './components/ModuleLesson.jsx'
 import Quiz from './components/Quiz.jsx'
+import ExpandedCourse from './components/ExpandedCourse.jsx'
+import VirtualLab from './components/VirtualLab.jsx'
+import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
+import { readLearningData, recordLearningActivity, writeLearningData } from './data/learningStore.js'
+import { submitQuizSubmission } from './auth.js'
 import { quizQuestions } from './data/database.js'
 
-export default function Home() {
+export default function Home({ user }) {
   const [activeNav, setActiveNav] = useState('beranda')
   const [activeModal, setActiveModal] = useState(() => {
     try {
@@ -81,16 +86,17 @@ export default function Home() {
 
   const handleNavigate = (targetId) => {
     setActiveNav(targetId)
+    if (targetId === 'learning-tools') {
+      setActiveModal('learning-tools')
+      return
+    }
     if (targetId === 'kuis') {
       setQuizModuleId(null)
       setActiveModal('quiz-page')
       return
     }
     if (targetId === 'laboratorium') {
-      const heroApparatus = document.getElementById('beranda')
-      if (heroApparatus) {
-        heroApparatus.scrollIntoView({ behavior: 'smooth' })
-      }
+      setActiveModal('virtual-lab')
       return
     }
     const elem = document.getElementById(targetId)
@@ -104,7 +110,50 @@ export default function Home() {
   }
 
   const handleOpenLab = () => {
-    setActiveModal('module-page:modul-2')
+    setActiveModal('virtual-lab')
+  }
+
+  const handleOpenLearningFeatures = (feature = '') => {
+    setActiveNav('learning-tools')
+    setLearningActivityVersion((value) => value + 1)
+    setActiveModal(feature ? `learning-tools:${feature}` : 'learning-tools')
+  }
+
+  const handleLearningActivity = () => {
+    setLearningActivityVersion((value) => value + 1)
+  }
+
+  const handleQuizComplete = (result) => {
+    const userId = user?.id || user?.email || 'anonymous'
+    const results = readLearningData(userId, 'quiz-results', [])
+    const next = [{
+      ...result,
+      completedAt: new Date().toISOString(),
+    }, ...results].slice(0, 100)
+    writeLearningData(userId, 'quiz-results', next)
+    recordLearningActivity(userId, {
+      type: 'quiz',
+      title: 'Menyelesaikan kuis',
+      detail: `${result.moduleTitle}: ${result.score}/${result.total} jawaban benar.`,
+    }, handleLearningActivity)
+
+    // Jika akun terdaftar / siswa anggota kelas, kirim ke database Firestore agar terbaca di Panel Guru
+    if (user && !user.isGuest && user.role !== 'guest') {
+      submitQuizSubmission({
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        classCode: user.classCode || null,
+        moduleId: result.moduleId,
+        score: result.score,
+        totalQuestions: result.total,
+        answers: result.answers || {}
+      }).catch((err) => console.warn('Gagal sync ke cloud:', err))
+    }
+  }
+
+  const handleOpenJournal = () => {
+    handleOpenLearningFeatures('digital-journal')
   }
 
   const handleSelectModule = (modId) => {
@@ -172,6 +221,7 @@ export default function Home() {
         activeNav={activeNav}
         onNavigate={handleNavigate}
         onStartLearning={handleStartLearning}
+        onOpenLearningFeatures={() => handleOpenLearningFeatures()}
       />
 
       {/* 2. Hero Section */}
@@ -256,6 +306,9 @@ export default function Home() {
 
       {/* 3. Three Topic Module Cards */}
       <TopicCards onSelectModule={handleSelectModule} />
+      <div className="container">
+        <ExpandedCourse userId={user?.id || user?.email || 'anonymous'} onActivity={handleLearningActivity} />
+      </div>
 
       {/* Educational Concept Guide & Misconception Matrix */}
       <section className="container" style={{ marginBottom: '4rem' }} aria-labelledby="matrix-title">
@@ -359,6 +412,7 @@ export default function Home() {
           onComplete={handleToggleModuleProgress}
           onSelectModule={handleSelectModule}
           onStartQuiz={handleStartQuiz}
+          onOpenVirtualLab={handleOpenLab}
         />
       )}
       {activeModal === 'quiz-page' && (
@@ -367,11 +421,22 @@ export default function Home() {
           moduleId={quizModuleId}
           onSelectModule={setQuizModuleId}
           onClose={closeModal}
+          onComplete={handleQuizComplete}
+        />
+      )}
+      {activeModal === 'virtual-lab' && <VirtualLab user={user} onClose={closeModal} onOpenJournal={handleOpenJournal} />}
+      {(activeModal === 'learning-tools' || activeModal?.startsWith('learning-tools:')) && (
+        <LearningFeatureHub
+          user={user}
+          onClose={closeModal}
+          onActivity={handleLearningActivity}
+          initialFeature={activeModal.includes(':') ? activeModal.split(':')[1] : ''}
+          activityVersion={learningActivityVersion}
         />
       )}
 
       {/* Legacy quick preview */}
-      {activeModal && !activeModal.startsWith('module-page:') && activeModal !== 'quiz-page' && (
+      {activeModal && !activeModal.startsWith('module-page:') && !activeModal.startsWith('learning-tools') && activeModal !== 'quiz-page' && activeModal !== 'virtual-lab' && (
         <div
           className="modal-backdrop"
           onClick={closeModal}
