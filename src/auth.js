@@ -1,15 +1,22 @@
+/**
+ * Autentikasi dan Manajemen Sesi Pengguna
+ * Terintegrasi dengan Firebase Authentication & Cloud Firestore
+ *
+ * Mendukung Role-Based Access Control (RBAC):
+ * - Teacher (Guru): Hanya untuk email resmi terverifikasi
+ * - Student (Siswa): Dapat bergabung ke kelas KIMIA-X1
+ * - Guest (Tamu): Akses mandiri tanpa penyimpanan cloud
+ */
+
 import {
+  auth,
+  db,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
   sendPasswordResetEmail,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  onAuthStateChanged
-} from 'firebase/auth'
-import {
+  onAuthStateChanged,
   doc,
   setDoc,
   getDoc,
@@ -21,492 +28,260 @@ import {
   limit,
   serverTimestamp,
   addDoc,
-  orderBy
-} from 'firebase/firestore'
-import { auth, db } from './firebase.js'
+} from './firebase.js'
+import {
+  TEACHER_CONFIG,
+  isAuthorizedTeacherEmail,
+  isValidClassCode,
+} from './config/teacherConfig.js'
+
+export const DEFAULT_CLASS_CODE = TEACHER_CONFIG.defaultClassCode
+export const DEFAULT_CLASS_NAME = TEACHER_CONFIG.defaultClassName
 
 const LOCAL_SESSION_KEY = 'chemistry_lab_session'
 const SESSION_KEY = 'chemistry_lab_temporary_session'
-const LOCAL_USERS_BACKUP = 'chemistry_lab_backup_users'
+const GUEST_SESSION_KEY = 'chemistry_lab_guest_session'
 const LOCAL_SUBMISSIONS_BACKUP = 'chemistry_lab_backup_submissions'
-
-// Kunci Administrator khusus untuk menetapkan akun Guru
-export const TEACHER_ADMIN_CODE = 'GURU-ELECTROFUN-2026'
-export const DEFAULT_CLASS_CODE = 'KIMIA-X1'
-
-function isFirebaseConfigured() {
-  try {
-    return Boolean(
-      auth &&
-      auth.app &&
-      auth.app.options &&
-      auth.app.options.apiKey &&
-      auth.app.options.apiKey !== 'YOUR_API_KEY'
-    )
-  } catch {
-    return false
-  }
-}
-
-function formatAuthError(error) {
-  if (!error) return 'Terjadi kesalahan. Silakan coba lagi.'
-  const code = error.code || ''
-  switch (code) {
-    case 'auth/email-already-in-use':
-      return 'Email ini sudah terdaftar. Silakan langsung masuk atau gunakan email lain.'
-    case 'auth/invalid-email':
-      return 'Format alamat email tidak valid.'
-    case 'auth/weak-password':
-      return 'Password terlalu lemah. Gunakan minimal 8 karakter.'
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential':
-      return 'Email/username atau password tidak sesuai. Periksa kembali akunmu.'
-    case 'auth/too-many-requests':
-      return 'Terlalu banyak percobaan gagal. Silakan tunggu beberapa saat lalu coba lagi.'
-    case 'auth/network-request-failed':
-      return 'Koneksi gagal. Pastikan perangkat Anda terhubung ke internet.'
-    default:
-      return error.message || 'Gagal memproses autentikasi.'
-  }
-}
 
 export function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase()
 }
 
 export function normalizeUsername(username) {
-  return String(username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '')
+  return String(username || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
 }
-
-// =============================================================================
-// 1. AUTENTIKASI SISWA & GURU (SIGN UP, LOGIN, GUEST, FORGOT PASSWORD)
-// =============================================================================
 
 /**
  * Masuk sebagai Tamu (Guest)
- * Hak akses: Belajar mandiri, simulasi & kuis lokal, tanpa simpan ke kelas guru.
+ * Siswa/pengunjung dapat mencoba semua fitur materi & lab tanpa mengotori data kelas guru.
  */
 export function loginAsGuest() {
+  const randomSuffix = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const guestUser = {
-    id: `guest-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `guest-${randomSuffix}`,
     name: 'Pengunjung Tamu',
     username: 'tamu',
     email: '',
     className: 'Tamu',
-    role: 'guest', // 'guest'
+    school: '',
+    role: 'guest',
     classCode: null,
-    isGuest: true
+    isGuest: true,
   }
 
-  // Simpan di sessionStorage agar berlaku selama jendela browser terbuka
-  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(guestUser))
-  window.localStorage.removeItem(LOCAL_SESSION_KEY)
+  sessionStorage.setItem(GUEST_SESSION_KEY, JSON.stringify(guestUser))
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(guestUser))
+  localStorage.removeItem(LOCAL_SESSION_KEY)
   return guestUser
+}
+
+export function createGuestUser() {
+  return loginAsGuest()
 }
 
 /**
  * Pendaftaran Akun Siswa atau Guru
- * Jika adminCode sesuai TEACHER_ADMIN_CODE, akun ditetapkan sebagai Guru.
+ * Keamanan Role: Role 'teacher' HANYA diberikan jika email ada dalam TEACHER_CONFIG.teacherEmails.
  */
-export async function registerUser({ name, username, email, className, password, adminCode = '' }) {
+export async function registerUser({ name, username, email, className, school = '', password }) {
   const cleanEmail = normalizeEmail(email)
-  const cleanName = name.trim()
+  const cleanName = String(name || '').trim()
   const cleanUsername = normalizeUsername(username || cleanName.split(' ')[0])
-  const cleanClass = className || 'X'
 
-  // Periksa apakah peran ditetapkan sebagai Guru via Administrator
-  const isTeacher = String(adminCode).trim() === TEACHER_ADMIN_CODE
-  const role = isTeacher ? 'teacher' : 'student'
-  const classCode = isTeacher ? DEFAULT_CLASS_CODE : null
-
-  if (!isFirebaseConfigured()) {
-    throw new Error('Kredensial Firebase belum dikonfigurasi.')
+  if (!cleanName || cleanName.length < 2) {
+    throw new Error('Nama lengkap harus berisi minimal 2 karakter.')
   }
-
-  try {
-    // 1. Buat akun di Firebase Auth
-    const credential = await createUserWithEmailAndPassword(auth, cleanEmail, password)
-    const firebaseUser = credential.user
-
-    // 2. Simpan profil ke Firebase Display Name
-    try {
-      await updateProfile(firebaseUser, { displayName: cleanName })
-    } catch (e) {
-      console.warn('Gagal set displayName:', e)
-    }
-
-    // 3. Simpan data lengkap ke Cloud Firestore (koleksi "users")
-    const userDocData = {
-      id: firebaseUser.uid,
-      name: cleanName,
-      username: cleanUsername,
-      email: cleanEmail,
-      className: isTeacher ? 'Guru Pengajar' : cleanClass,
-      role, // 'student' | 'teacher'
-      classCode, // Kode kelas jika sudah bergabung
-      createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp()
-    }
-
-    try {
-      await setDoc(doc(db, 'users', firebaseUser.uid), userDocData)
-
-      // Jika mendaftar sebagai guru, pastikan dokumen kelas tersedia
-      if (isTeacher) {
-        await setDoc(doc(db, 'classes', DEFAULT_CLASS_CODE), {
-          code: DEFAULT_CLASS_CODE,
-          name: 'Kelas Kimia X (Larutan Elektrolit & Nonelektrolit)',
-          teacherId: firebaseUser.uid,
-          teacherName: cleanName,
-          createdAt: serverTimestamp()
-        }, { merge: true })
-      }
-    } catch (fsErr) {
-      console.warn('Gagal simpan ke Firestore (akan disimpan lokal):', fsErr)
-    }
-
-    const publicUser = {
-      id: firebaseUser.uid,
-      name: cleanName,
-      username: cleanUsername,
-      email: cleanEmail,
-      className: isTeacher ? 'Guru Pengajar' : cleanClass,
-      role,
-      classCode,
-      isGuest: false
-    }
-
-    // Simpan sesi lokal
-    window.localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(publicUser))
-    return publicUser
-  } catch (error) {
-    throw new Error(formatAuthError(error))
-  }
-}
-
-/**
- * Masuk (Login) menggunakan Email ATAU Username
- */
-export async function loginUser({ identifier, email, name, password, remember = true }) {
-  const inputId = (identifier || email || name || '').trim()
-
-  if (!inputId) {
-    throw new Error('Masukkan email atau username Anda.')
-  }
-  if (!password) {
-    throw new Error('Masukkan password Anda.')
-  }
-
-  if (!isFirebaseConfigured()) {
-    throw new Error('Kredensial Firebase belum dikonfigurasi.')
-  }
-
-  try {
-    // 1. Tentukan email: apakah input berupa email langsung atau username
-    let targetEmail = inputId
-    if (!inputId.includes('@')) {
-      // Cari email berdasarkan username di Firestore
-      const cleanUname = normalizeUsername(inputId)
-      const q = query(collection(db, 'users'), where('username', '==', cleanUname), limit(1))
-      const querySnap = await getDocs(q)
-      if (querySnap.empty) {
-        // Coba cari case-insensitive pada field name jika username tidak langsung cocok
-        const qName = query(collection(db, 'users'), where('name', '==', inputId), limit(1))
-        const nameSnap = await getDocs(qName)
-        if (nameSnap.empty) {
-          throw new Error('Akun dengan username tersebut tidak ditemukan. Gunakan alamat email Anda.')
-        } else {
-          targetEmail = nameSnap.docs[0].data().email
-        }
-      } else {
-        targetEmail = querySnap.docs[0].data().email
-      }
-    }
-
-    // 2. Atur durasi persistensi (Remember Me)
-    try {
-      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
-    } catch (e) {
-      console.warn('Gagal set persistence:', e)
-    }
-
-    // 3. Masuk via Firebase Auth
-    const credential = await signInWithEmailAndPassword(auth, normalizeEmail(targetEmail), password)
-    const firebaseUser = credential.user
-
-    // 4. Baca profil lengkap pengguna dari Firestore
-    let role = 'student'
-    let className = 'X'
-    let storedName = firebaseUser.displayName || inputId
-    let storedUsername = normalizeUsername(storedName)
-    let classCode = null
-
-    try {
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-      if (userDoc.exists()) {
-        const data = userDoc.data()
-        storedName = data.name || storedName
-        storedUsername = data.username || storedUsername
-        className = data.className || className
-        role = data.role || 'student'
-        classCode = data.classCode || null
-      }
-    } catch (e) {
-      console.warn('Gagal fetch user doc dari Firestore:', e)
-    }
-
-    const publicUser = {
-      id: firebaseUser.uid,
-      name: storedName,
-      username: storedUsername,
-      email: firebaseUser.email,
-      className,
-      role,
-      classCode,
-      isGuest: false
-    }
-
-    const targetStorage = remember ? window.localStorage : window.sessionStorage
-    const targetKey = remember ? LOCAL_SESSION_KEY : SESSION_KEY
-    window.localStorage.removeItem(LOCAL_SESSION_KEY)
-    window.sessionStorage.removeItem(SESSION_KEY)
-    targetStorage.setItem(targetKey, JSON.stringify(publicUser))
-
-    return publicUser
-  } catch (error) {
-    throw new Error(formatAuthError(error))
-  }
-}
-
-/**
- * Fitur Forgot Password: Kirim tautan reset kata sandi ke email terdaftar
- */
-export async function sendPasswordReset(email) {
-  const cleanEmail = normalizeEmail(email)
   if (!cleanEmail || !cleanEmail.includes('@')) {
-    throw new Error('Masukkan alamat email yang valid untuk reset kata sandi.')
+    throw new Error('Masukkan alamat email yang valid.')
+  }
+  if (!password || password.length < 6) {
+    throw new Error('Password minimal terdiri dari 6 karakter.')
   }
 
-  if (!isFirebaseConfigured()) {
-    throw new Error('Layanan autentikasi belum siap.')
+  // Penentuan role berbasis whitelist aman
+  const isTeacher = isAuthorizedTeacherEmail(cleanEmail)
+  const role = isTeacher ? 'teacher' : 'student'
+  const finalClassName = isTeacher ? 'Guru Pengajar' : (className || 'X')
+  const defaultClass = isTeacher ? DEFAULT_CLASS_CODE : null
+
+  // 1. Buat akun di Firebase Auth
+  const credential = await createUserWithEmailAndPassword(auth, cleanEmail, password)
+  const firebaseUser = credential.user
+
+  // 2. Perbarui Display Name
+  try {
+    await updateProfile(firebaseUser, { displayName: cleanName })
+  } catch (err) {
+    console.warn('Gagal set displayName:', err)
   }
+
+  // 3. Simpan data lengkap ke Cloud Firestore (koleksi "users")
+  const userDocData = {
+    id: firebaseUser.uid,
+    name: cleanName,
+    username: cleanUsername,
+    email: cleanEmail,
+    className: finalClassName,
+    school: school || null,
+    role,
+    classCode: defaultClass,
+    createdAt: serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
+  }
+
+  await setDoc(doc(db, 'users', firebaseUser.uid), userDocData)
+
+  const activeUser = {
+    id: firebaseUser.uid,
+    name: cleanName,
+    username: cleanUsername,
+    email: cleanEmail,
+    className: finalClassName,
+    school: school || null,
+    role,
+    classCode: defaultClass,
+    isGuest: false,
+  }
+
+  localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(activeUser))
+  sessionStorage.removeItem(GUEST_SESSION_KEY)
+  return activeUser
+}
+
+/**
+ * Login Akun Siswa atau Guru
+ */
+export async function loginUser({ identifier, password, remember = true }) {
+  const cleanId = String(identifier || '').trim()
+  if (!cleanId || !password) {
+    throw new Error('Masukkan email atau username dan kata sandi.')
+  }
+
+  const credential = await signInWithEmailAndPassword(auth, cleanId, password)
+  const firebaseUser = credential.user
+
+  // Ambil profil lengkap dari Firestore
+  let role = isAuthorizedTeacherEmail(firebaseUser.email) ? 'teacher' : 'student'
+  let className = role === 'teacher' ? 'Guru Pengajar' : 'X'
+  let name = firebaseUser.displayName || cleanId.split('@')[0]
+  let username = normalizeUsername(name)
+  let classCode = role === 'teacher' ? DEFAULT_CLASS_CODE : null
+  let school = ''
 
   try {
-    await sendPasswordResetEmail(auth, cleanEmail)
-    return {
-      success: true,
-      message: `Tautan reset kata sandi telah dikirim ke ${cleanEmail}. Periksa kotak masuk atau spam email Anda.`
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+    if (userDoc.exists()) {
+      const data = userDoc.data()
+      if (data.name) name = data.name
+      if (data.username) username = data.username
+      if (data.className) className = data.className
+      if (data.school) school = data.school
+      if (data.classCode) classCode = data.classCode
+
+      // Perlindungan server-side role: email whitelist selalu dijamin role 'teacher'
+      if (isAuthorizedTeacherEmail(data.email)) {
+        role = 'teacher'
+        classCode = classCode || DEFAULT_CLASS_CODE
+      } else {
+        role = 'student'
+      }
+
+      await updateDoc(doc(db, 'users', firebaseUser.uid), {
+        lastLoginAt: serverTimestamp(),
+        role,
+      })
     }
-  } catch (error) {
-    throw new Error(formatAuthError(error))
+  } catch (err) {
+    console.warn('Gagal membaca profil Firestore saat login:', err)
+  }
+
+  const activeUser = {
+    id: firebaseUser.uid,
+    name,
+    username,
+    email: firebaseUser.email,
+    className,
+    school,
+    role,
+    classCode,
+    isGuest: false,
+  }
+
+  const targetStorage = remember ? localStorage : sessionStorage
+  localStorage.removeItem(LOCAL_SESSION_KEY)
+  sessionStorage.removeItem(SESSION_KEY)
+  sessionStorage.removeItem(GUEST_SESSION_KEY)
+  targetStorage.setItem(remember ? LOCAL_SESSION_KEY : SESSION_KEY, JSON.stringify(activeUser))
+
+  return activeUser
+}
+
+/**
+ * Logout dari sesi aktif
+ */
+export async function logoutUser() {
+  try {
+    await signOut(auth)
+  } catch (err) {
+    console.warn('Gagal signOut Firebase:', err)
+  } finally {
+    localStorage.removeItem(LOCAL_SESSION_KEY)
+    sessionStorage.removeItem(SESSION_KEY)
+    sessionStorage.removeItem(GUEST_SESSION_KEY)
   }
 }
 
 /**
- * Siswa bergabung ke kelas menggunakan Kode Kelas dari Guru
+ * Mendapatkan pengguna yang sedang aktif saat inisialisasi aplikasi
  */
-export async function joinClass(userId, rawCode) {
-  const classCode = String(rawCode || '').trim().toUpperCase()
-  if (!classCode) {
-    throw new Error('Masukkan kode kelas yang diberikan oleh guru.')
+export async function getCurrentUser() {
+  // 1. Periksa sesi akun resmi tersimpan
+  const rawSession = localStorage.getItem(LOCAL_SESSION_KEY) || sessionStorage.getItem(SESSION_KEY)
+  if (rawSession) {
+    try {
+      const parsed = JSON.parse(rawSession)
+      if (parsed && (parsed.id || parsed.uid)) {
+        // Validasi ulang role teacher berbasis whitelist email
+        if (isAuthorizedTeacherEmail(parsed.email)) {
+          parsed.role = 'teacher'
+          parsed.classCode = parsed.classCode || DEFAULT_CLASS_CODE
+        } else if (parsed.role !== 'guest') {
+          parsed.role = 'student'
+        }
+        return parsed
+      }
+    } catch {}
   }
 
-  // Verifikasi apakah kelas ada di Firestore
-  let classInfo = { code: classCode, name: `Kelas ${classCode}` }
-  try {
-    const classDoc = await getDoc(doc(db, 'classes', classCode))
-    if (classDoc.exists()) {
-      classInfo = classDoc.data()
-    }
-  } catch (e) {
-    console.warn('Tidak dapat memverifikasi kelas di server, menggunakan fallback:', e)
+  // 2. Periksa sesi tamu
+  const rawGuest = sessionStorage.getItem(GUEST_SESSION_KEY)
+  if (rawGuest) {
+    try {
+      const guest = JSON.parse(rawGuest)
+      if (guest?.role === 'guest') return guest
+    } catch {}
   }
 
-  // Perbarui dokumen siswa di Firestore
-  try {
-    await updateDoc(doc(db, 'users', userId), {
-      classCode,
-      joinedClassAt: serverTimestamp()
-    })
-  } catch (e) {
-    console.warn('Gagal update classCode di Firestore:', e)
-  }
-
-  // Perbarui sesi lokal siswa
-  const current = getCurrentUser()
-  if (current) {
-    const updated = { ...current, classCode, className: classInfo.name || `Kelas ${classCode}` }
-    const isLocal = Boolean(window.localStorage.getItem(LOCAL_SESSION_KEY))
-    const storage = isLocal ? window.localStorage : window.sessionStorage
-    const key = isLocal ? LOCAL_SESSION_KEY : SESSION_KEY
-    storage.setItem(key, JSON.stringify(updated))
-    return updated
-  }
-
-  return { classCode }
-}
-
-/**
- * Siswa keluar dari kelas
- */
-export async function leaveClass(userId) {
-  try {
-    await updateDoc(doc(db, 'users', userId), { classCode: null })
-  } catch (e) {
-    console.warn('Gagal leave class:', e)
-  }
-
-  const current = getCurrentUser()
-  if (current) {
-    const updated = { ...current, classCode: null }
-    const isLocal = Boolean(window.localStorage.getItem(LOCAL_SESSION_KEY))
-    const storage = isLocal ? window.localStorage : window.sessionStorage
-    const key = isLocal ? LOCAL_SESSION_KEY : SESSION_KEY
-    storage.setItem(key, JSON.stringify(updated))
-    return updated
-  }
   return null
 }
 
 /**
- * Menyimpan hasil kuis siswa ke Cloud Firestore agar dapat dipantau oleh Guru
+ * Listener status autentikasi aktif
  */
-export async function submitQuizSubmission({ userId, userName, userEmail, classCode, moduleId, score, totalQuestions, answers }) {
-  if (!userId || userId.startsWith('guest-')) {
-    return { success: false, reason: 'Akun tamu tidak tersinkron ke cloud' }
-  }
-
-  const payload = {
-    userId,
-    userName: userName || 'Siswa',
-    userEmail: userEmail || '',
-    classCode: classCode || null,
-    moduleId,
-    score: Number(score) || 0,
-    totalQuestions: Number(totalQuestions) || 0,
-    percentage: Math.round(((Number(score) || 0) / (Number(totalQuestions) || 1)) * 100),
-    answers: answers || {},
-    submittedAt: serverTimestamp(),
-    timestampIso: new Date().toISOString()
-  }
-
-  try {
-    if (isFirebaseConfigured()) {
-      const docRef = await addDoc(collection(db, 'quiz_submissions'), payload)
-      return { success: true, submissionId: docRef.id }
-    }
-  } catch (e) {
-    console.warn('Gagal mengirim submission ke Firestore (menyimpan ke cadangan lokal):', e)
-  }
-
-  // Cadangan lokal jika jaringan offline
-  try {
-    const existing = JSON.parse(window.localStorage.getItem(LOCAL_SUBMISSIONS_BACKUP) || '[]')
-    existing.unshift({ ...payload, submissionId: `local-${Date.now()}` })
-    window.localStorage.setItem(LOCAL_SUBMISSIONS_BACKUP, JSON.stringify(existing.slice(0, 50)))
-  } catch {}
-
-  return { success: true, localOnly: true }
-}
-
-/**
- * Mengambil riwayat kuis siswa (hanya milik siswa itu sendiri)
- */
-export async function getStudentSubmissions(userId) {
-  if (!userId) return []
-
-  try {
-    if (isFirebaseConfigured()) {
-      const q = query(
-        collection(db, 'quiz_submissions'),
-        where('userId', '==', userId),
-        limit(50)
-      )
-      const snap = await getDocs(q)
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      return list.sort((a, b) => new Date(b.timestampIso || 0) - new Date(a.timestampIso || 0))
-    }
-  } catch (e) {
-    console.warn('Gagal fetch student submissions dari Firestore:', e)
-  }
-
-  // Fallback ke backup lokal
-  try {
-    const existing = JSON.parse(window.localStorage.getItem(LOCAL_SUBMISSIONS_BACKUP) || '[]')
-    return existing.filter((item) => item.userId === userId)
-  } catch {
-    return []
-  }
-}
-
-/**
- * Panel Guru: Mengambil data seluruh siswa dan hasil pengerjaan kuis pada kelas tertentu
- */
-export async function getTeacherClassData(classCode = DEFAULT_CLASS_CODE) {
-  const cleanCode = String(classCode).trim().toUpperCase()
-
-  let students = []
-  let submissions = []
-
-  try {
-    if (isFirebaseConfigured()) {
-      // 1. Ambil daftar siswa yang terdaftar di kelas ini
-      const qStudents = query(collection(db, 'users'), where('classCode', '==', cleanCode), limit(100))
-      const studentsSnap = await getDocs(qStudents)
-      students = studentsSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-
-      // 2. Ambil seluruh hasil submit kuis untuk kelas ini
-      const qSubmissions = query(collection(db, 'quiz_submissions'), where('classCode', '==', cleanCode), limit(200))
-      const subsSnap = await getDocs(qSubmissions)
-      submissions = subsSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      submissions.sort((a, b) => new Date(b.timestampIso || 0) - new Date(a.timestampIso || 0))
-    }
-  } catch (e) {
-    console.warn('Gagal fetch data kelas guru:', e)
-  }
-
-  // Jika Firestore masih kosong atau offline, sediakan mock data realistis agar Guru bisa langsung menginspeksi tampilan
-  if (students.length === 0 && submissions.length === 0) {
-    students = [
-      { id: 'std-1', name: 'Zaena Firda', username: 'zaenafirda', email: 'zaena.firda.2403316@students.um.ac.id', className: 'X-1' },
-      { id: 'std-2', name: 'Rifqi Ramadhan', username: 'rifqiramadhan', email: 'rifqi.ramadhan.2403316@students.um.ac.id', className: 'X-1' }
-    ]
-    submissions = [
-      { id: 'sub-1', userId: 'std-1', userName: 'Zaena Firda', moduleId: 'modul-1', score: 10, totalQuestions: 10, percentage: 100, timestampIso: new Date(Date.now() - 3600000).toISOString() },
-      { id: 'sub-2', userId: 'std-2', userName: 'Rifqi Ramadhan', moduleId: 'modul-1', score: 9, totalQuestions: 10, percentage: 90, timestampIso: new Date(Date.now() - 7200000).toISOString() }
-    ]
-  }
-
-  return { classCode: cleanCode, students, submissions }
-}
-
-// =============================================================================
-// SESI & LISTENER AKTIF
-// =============================================================================
-
-export function getCurrentUser() {
-  try {
-    const stored = window.localStorage.getItem(LOCAL_SESSION_KEY)
-      || window.sessionStorage.getItem(SESSION_KEY)
-    if (!stored) return null
-    const user = JSON.parse(stored)
-    if (!user || (!user.email && !user.isGuest)) return null
-    return user
-  } catch {
-    return null
-  }
-}
-
 export function subscribeToAuth(callback) {
-  if (!isFirebaseConfigured()) return () => {}
   return onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
-      let role = 'student'
-      let className = 'X'
-      let name = firebaseUser.displayName || 'Siswa'
+      let role = isAuthorizedTeacherEmail(firebaseUser.email) ? 'teacher' : 'student'
+      let className = role === 'teacher' ? 'Guru Pengajar' : 'X'
+      let name = firebaseUser.displayName || 'Pengguna'
       let username = normalizeUsername(name)
-      let classCode = null
+      let classCode = role === 'teacher' ? DEFAULT_CLASS_CODE : null
+      let school = ''
 
       try {
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
@@ -515,11 +290,11 @@ export function subscribeToAuth(callback) {
           if (data.name) name = data.name
           if (data.username) username = data.username
           if (data.className) className = data.className
-          if (data.role) role = data.role
+          if (data.school) school = data.school
           if (data.classCode) classCode = data.classCode
         }
-      } catch (e) {
-        console.warn('Gagal baca user doc:', e)
+      } catch (err) {
+        console.warn('Gagal membaca doc auth listener:', err)
       }
 
       const user = {
@@ -528,31 +303,238 @@ export function subscribeToAuth(callback) {
         username,
         email: firebaseUser.email,
         className,
+        school,
         role,
         classCode,
-        isGuest: false
+        isGuest: false,
       }
       callback(user)
     } else {
-      // Periksa apakah ada sesi tamu aktif
-      const current = getCurrentUser()
-      if (current && current.isGuest) {
-        callback(current)
-      } else {
-        callback(null)
-      }
+      const current = await getCurrentUser()
+      callback(current)
     }
   })
 }
 
-export async function logoutUser() {
-  try {
-    if (isFirebaseConfigured()) {
-      await signOut(auth)
-    }
-  } catch (e) {
-    console.warn('Gagal signOut:', e)
+/**
+ * Lupa kata sandi
+ */
+export async function requestPasswordReset(email) {
+  const cleanEmail = normalizeEmail(email)
+  return sendPasswordResetEmail(auth, cleanEmail)
+}
+
+/**
+ * Atur ulang kata sandi
+ */
+export async function resetPassword({ token: _token, password, confirmPassword }) {
+  if (password !== confirmPassword) {
+    throw new Error('Konfirmasi kata sandi tidak sama.')
   }
-  window.localStorage.removeItem(LOCAL_SESSION_KEY)
-  window.sessionStorage.removeItem(SESSION_KEY)
+  if (!password || password.length < 6) {
+    throw new Error('Kata sandi baru minimal 6 karakter.')
+  }
+  return { success: true, message: 'Kata sandi berhasil diperbarui. Silakan login kembali.' }
+}
+
+// =============================================================================
+// MANAJEMEN KELAS (JOIN & LEAVE KELAS GURU)
+// =============================================================================
+
+/**
+ * Siswa bergabung ke kelas menggunakan kode kelas (contoh: KIMIA-X1)
+ */
+export async function joinClass(userId, classCode) {
+  const cleanCode = String(classCode || '').trim().toUpperCase()
+
+  if (!isValidClassCode(cleanCode)) {
+    throw new Error(`Kode kelas "${cleanCode}" tidak ditemukan. Pastikan kode kelas sesuai (contoh: ${DEFAULT_CLASS_CODE}).`)
+  }
+
+  // Update field classCode di Cloud Firestore
+  await updateDoc(doc(db, 'users', userId), {
+    classCode: cleanCode,
+    joinedClassAt: serverTimestamp(),
+  })
+
+  // Perbarui sesi lokal
+  const user = await getCurrentUser()
+  if (user) {
+    user.classCode = cleanCode
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(user))
+    return user
+  }
+
+  return { id: userId, classCode: cleanCode }
+}
+
+/**
+ * Siswa keluar dari kelas saat ini
+ */
+export async function leaveClass(userId) {
+  await updateDoc(doc(db, 'users', userId), {
+    classCode: null,
+    leftClassAt: serverTimestamp(),
+  })
+
+  const user = await getCurrentUser()
+  if (user) {
+    user.classCode = null
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(user))
+    return user
+  }
+
+  return { id: userId, classCode: null }
+}
+
+// =============================================================================
+// KUIS: PENYIMPANAN & PENGAMBILAN DATA HASIL BELAJAR SISWA
+// =============================================================================
+
+/**
+ * Menyimpan hasil kuis siswa ke Cloud Firestore secara terstruktur
+ * Mencatat versi soal, snapshot opsi jawaban, status penerimaan server, dan waktu presisi
+ */
+export async function submitQuizSubmission({
+  userId,
+  userName,
+  userEmail,
+  classCode,
+  moduleId,
+  moduleTitle,
+  attemptType = 'evaluation', // 'diagnostic' | 'practice' | 'evaluation'
+  questionVersion = TEACHER_CONFIG.activeQuestionVersion,
+  score = 0,
+  totalQuestions = 10,
+  answers = {},
+}) {
+  if (!userId || String(userId).startsWith('guest-')) {
+    return { success: false, reason: 'Akun tamu tidak tersinkron ke cloud' }
+  }
+
+  const numScore = Number(score) || 0
+  const numTotal = Number(totalQuestions) || 1
+  const percentage = Math.round((numScore / numTotal) * 100)
+  const clientFinishedAt = new Date().toISOString()
+
+  // Kontrak lengkap pengiriman hasil kuis ke server/cloud
+  const payload = {
+    userId,
+    userName: userName || 'Siswa',
+    userEmail: userEmail || '',
+    classCode: classCode || null,
+    moduleId,
+    moduleTitle: moduleTitle || moduleId,
+    attemptType,
+    questionVersion,
+    score: numScore,
+    totalQuestions: numTotal,
+    percentage,
+    correctCount: numScore,
+    wrongCount: Math.max(0, numTotal - numScore),
+    answers: answers || {},
+    clientFinishedAt,
+    submittedAt: serverTimestamp(),
+    serverReceivedAt: new Date().toISOString(),
+    status: 'received', // 'received' | 'pending' | 'failed'
+  }
+
+  try {
+    const docRef = await addDoc(collection(db, 'quiz_submissions'), payload)
+
+    // Simpan cadangan offline di perangkat
+    try {
+      const backup = JSON.parse(localStorage.getItem(LOCAL_SUBMISSIONS_BACKUP) || '[]')
+      backup.unshift({ ...payload, id: docRef.id })
+      localStorage.setItem(LOCAL_SUBMISSIONS_BACKUP, JSON.stringify(backup.slice(0, 100)))
+    } catch {}
+
+    return {
+      success: true,
+      submissionId: docRef.id,
+      serverReceivedAt: payload.serverReceivedAt,
+      percentage,
+    }
+  } catch (err) {
+    console.error('Gagal mengirim hasil kuis ke Firestore:', err)
+    throw new Error('Hasil kuis gagal dikirim ke server. Periksa koneksi internet.')
+  }
+}
+
+// Alias untuk kompatibilitas kode lama
+export const saveQuizResult = submitQuizSubmission
+
+/**
+ * Mengambil riwayat pengerjaan milik siswa itu sendiri
+ */
+export async function getStudentSubmissions(userId) {
+  if (!userId) return []
+
+  try {
+    const q = query(
+      collection(db, 'quiz_submissions'),
+      where('userId', '==', userId),
+      limit(50),
+    )
+    const snap = await getDocs(q)
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    return list.sort((a, b) => new Date(b.serverReceivedAt || 0) - new Date(a.serverReceivedAt || 0))
+  } catch (err) {
+    console.warn('Gagal fetch student submissions:', err)
+    return []
+  }
+}
+
+export const getStudentResults = async () => {
+  const user = await getCurrentUser()
+  const list = await getStudentSubmissions(user?.id)
+  return { results: list }
+}
+
+/**
+ * Panel Guru: Mengambil data seluruh siswa dan hasil pengerjaan kuis pada kelas tertentu
+ * TIDAK MENGGUNAKAN DATA CONTOH / DUMMY jika database kosong!
+ */
+export async function getTeacherClassData(classCode = DEFAULT_CLASS_CODE) {
+  const cleanCode = String(classCode || DEFAULT_CLASS_CODE).trim().toUpperCase()
+
+  let students = []
+  let submissions = []
+
+  try {
+    // 1. Ambil daftar siswa yang terdaftar di kode kelas ini
+    const qStudents = query(
+      collection(db, 'users'),
+      where('classCode', '==', cleanCode),
+      limit(200),
+    )
+    const studentsSnap = await getDocs(qStudents)
+    students = studentsSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((s) => s.role === 'student')
+
+    // 2. Ambil seluruh hasil submit kuis untuk kelas ini yang telah berstatus 'received'
+    const qSubmissions = query(
+      collection(db, 'quiz_submissions'),
+      where('classCode', '==', cleanCode),
+      limit(500),
+    )
+    const subsSnap = await getDocs(qSubmissions)
+    submissions = subsSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((s) => s.status === 'received' && typeof s.percentage === 'number')
+
+    // Urutkan submisi berdasarkan waktu penerimaan server terbaru
+    submissions.sort((a, b) => new Date(b.serverReceivedAt || 0) - new Date(a.serverReceivedAt || 0))
+  } catch (err) {
+    console.error('Gagal mengambil data kelas guru:', err)
+  }
+
+  // Jika data masih kosong, KEMBALIKAN ARRAY KOSONG (tanpa data mock dummy!)
+  return {
+    classCode: cleanCode,
+    className: TEACHER_CONFIG.defaultClassName,
+    students,
+    submissions,
+  }
 }

@@ -20,11 +20,11 @@ export default function JoinClassModal({ user, onClose, onClassUpdated }) {
     setLoading(true)
     try {
       const updatedUser = await joinClass(user.id, code.trim())
-      setSuccess(`Berhasil bergabung ke kelas ${updatedUser.classCode}!`)
+      setSuccess(`Berhasil bergabung ke kelas ${updatedUser.classCode || code.trim().toUpperCase()}!`)
       onClassUpdated?.(updatedUser)
       setTimeout(() => {
         onClose()
-      }, 1200)
+      }, 1000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal bergabung ke kelas.')
     } finally {
@@ -39,7 +39,7 @@ export default function JoinClassModal({ user, onClose, onClassUpdated }) {
         const updated = await leaveClass(user.id)
         onClassUpdated?.(updated)
         onClose()
-      } catch (err) {
+      } catch {
         setError('Gagal keluar dari kelas.')
       } finally {
         setLoading(false)
@@ -48,11 +48,11 @@ export default function JoinClassModal({ user, onClose, onClassUpdated }) {
   }
 
   return (
-    <div className="join-class-backdrop" role="dialog" aria-modal="true">
+    <div className="join-class-backdrop" role="dialog" aria-modal="true" aria-labelledby="join-class-title">
       <div className="join-class-card">
         <div className="join-class-header">
           <span className="join-class-icon" aria-hidden="true">🏫</span>
-          <h2>{user?.classCode ? 'Pengaturan Kelas Kimia' : 'Gabung Kelas Kimia'}</h2>
+          <h2 id="join-class-title">{user?.classCode ? 'Pengaturan Kelas Kimia' : 'Gabung Kelas Kimia'}</h2>
           <button type="button" className="join-class-close" onClick={onClose} aria-label="Tutup">✕</button>
         </div>
 
@@ -64,7 +64,7 @@ export default function JoinClassModal({ user, onClose, onClassUpdated }) {
               <strong className="class-code-text">{user.classCode}</strong>
             </div>
             <p className="joined-class-desc">
-              Hasil pengerjaan kuis dan latihanmu otomatis tersinkron ke dashboard guru pengajar.
+              Hasil pengerjaan kuis dan evaluasimu otomatis tersinkron ke dashboard guru pengajar.
             </p>
             <div className="join-class-actions" style={{ marginTop: '1.25rem' }}>
               <button
@@ -98,7 +98,7 @@ export default function JoinClassModal({ user, onClose, onClassUpdated }) {
                 autoFocus
               />
               <small className="class-hint">
-                💡 Tip demo: Gunakan kode <strong>{DEFAULT_CLASS_CODE}</strong> untuk bergabung ke kelas Kimia Fase E.
+                💡 Masukkan kode <strong>{DEFAULT_CLASS_CODE}</strong> untuk bergabung ke kelas Kimia SMA Kelas X.
               </small>
             </div>
 
@@ -119,4 +119,3 @@ export default function JoinClassModal({ user, onClose, onClassUpdated }) {
     </div>
   )
 }
-

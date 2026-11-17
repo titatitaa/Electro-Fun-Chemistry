@@ -1,9 +1,15 @@
 import { useState } from 'react'
-import { loginUser, registerUser, loginAsGuest, sendPasswordReset } from '../auth.js'
+import {
+  createGuestUser,
+  loginUser,
+  registerUser,
+  requestPasswordReset,
+  resetPassword,
+} from '../auth.js'
 import './AuthPage.css'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const USERNAME_PATTERN = /^[a-zA-Z0-9._-]{3,30}$/
+const USERNAME_PATTERN = /^[a-zA-Z0-9._-]{3,24}$/
 
 function FlaskMark() {
   return (
@@ -28,7 +34,18 @@ function EyeIcon({ visible }) {
   )
 }
 
-function Field({ label, id, type = 'text', value, onChange, placeholder, autoComplete, error, children, ...props }) {
+function Field({
+  label,
+  id,
+  type = 'text',
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  error,
+  children,
+  ...props
+}) {
   return (
     <div className={`auth-field${error ? ' has-error' : ''}`}>
       <label htmlFor={id}>{label}</label>
@@ -52,146 +69,125 @@ function Field({ label, id, type = 'text', value, onChange, placeholder, autoCom
   )
 }
 
-export default function AuthPage({ onAuthenticated, initialError }) {
-  // Mode: 'login' | 'register' | 'forgot'
-  const [mode, setMode] = useState('login')
+export default function AuthPage({ onAuthenticated, onPasswordReset, initialError = '' }) {
+  const resetToken = new URLSearchParams(window.location.search).get('reset') || ''
+  const [mode, setMode] = useState(resetToken ? 'reset' : 'login')
   const [form, setForm] = useState({
     name: '',
-    username: '',
     email: '',
-    identifier: '', // Email atau Username pada login
-    className: 'X-1',
+    username: '',
+    identifier: '',
+    className: '',
+    school: '',
     password: '',
     confirmPassword: '',
-    adminCode: ''
   })
-  const [isTeacherSignup, setIsTeacherSignup] = useState(false)
   const [remember, setRemember] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState(initialError || '')
-  const [messageType, setMessageType] = useState('error') // 'error' | 'success'
+  const [message, setMessage] = useState(initialError)
+  const [successMessage, setSuccessMessage] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
 
   const isRegister = mode === 'register'
   const isForgot = mode === 'forgot'
+  const isReset = mode === 'reset'
 
   const updateField = (event) => {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
     setFieldErrors((current) => ({ ...current, [name]: '' }))
     setMessage('')
+    setSuccessMessage('')
   }
 
   const validate = () => {
     const errors = {}
-
-    if (isForgot) {
-      if (!form.email.trim()) errors.email = 'Alamat email wajib diisi.'
-      else if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Masukkan format email yang valid.'
-      setFieldErrors(errors)
-      return Object.keys(errors).length === 0
+    if (isRegister && !String(form.name || '').trim()) errors.name = 'Nama lengkap wajib diisi.'
+    if (mode === 'login' && !String(form.identifier || '').trim()) errors.identifier = 'Email atau username wajib diisi.'
+    if ((isRegister || isForgot) && !String(form.email || '').trim()) errors.email = 'Email wajib diisi.'
+    else if ((isRegister || isForgot) && !EMAIL_PATTERN.test(String(form.email || '').trim())) {
+      errors.email = 'Masukkan alamat email yang valid.'
     }
-
-    if (isRegister) {
-      if (!form.name.trim()) errors.name = 'Nama lengkap wajib diisi.'
-      if (!form.username.trim()) {
-        errors.username = 'Username wajib diisi.'
-      } else if (!USERNAME_PATTERN.test(form.username.trim())) {
-        errors.username = 'Gunakan 3-30 karakter (huruf, angka, titik, atau garis bawah).'
-      }
-      if (!form.email.trim()) errors.email = 'Alamat email aktif wajib diisi.'
-      else if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Masukkan format email yang valid.'
-      if (!form.password) errors.password = 'Password wajib diisi.'
-      else if (form.password.length < 8) errors.password = 'Gunakan minimal 8 karakter.'
-      if (form.password !== form.confirmPassword) {
-        errors.confirmPassword = 'Konfirmasi password tidak sesuai.'
-      }
-      if (!isTeacherSignup && !form.className) errors.className = 'Pilih atau masukkan kelasmu.'
-    } else {
-      // Login validation
-      if (!form.identifier.trim()) errors.identifier = 'Masukkan email atau username Anda.'
-      if (!form.password) errors.password = 'Password wajib diisi.'
+    if (isRegister && !USERNAME_PATTERN.test(String(form.username || ''))) {
+      errors.username = 'Username 3–24 karakter: huruf, angka, titik, garis bawah, atau tanda hubung.'
     }
-
+    if (isRegister && !String(form.className || '').trim()) errors.className = 'Kelas wajib diisi.'
+    if (isRegister || isReset) {
+      if (!form.password || form.password.length < 6 || form.password.length > 128) {
+        errors.password = 'Gunakan password 6–128 karakter.'
+      }
+      if (form.confirmPassword !== form.password) errors.confirmPassword = 'Konfirmasi password tidak sama.'
+    }
+    if (mode === 'login' && !form.password) errors.password = 'Password wajib diisi.'
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
 
-  // Handle Login & Register submit
   const handleSubmit = async (event) => {
     event.preventDefault()
     setMessage('')
+    setSuccessMessage('')
     if (!validate()) return
 
     setLoading(true)
-
     try {
-      if (isForgot) {
-        // Alur Lupa Password
-        const result = await sendPasswordReset(form.email)
-        setMessageType('success')
-        setMessage(result.message)
-        setLoading(false)
-        return
-      }
-
-      let user
-      if (isRegister) {
-        // Alur Pendaftaran Akun Siswa atau Guru
-        user = await registerUser({
-          name: form.name,
-          username: form.username,
-          email: form.email,
-          className: isTeacherSignup ? 'Guru Pengajar' : form.className,
-          password: form.password,
-          adminCode: isTeacherSignup ? form.adminCode : ''
-        })
-
-        const roleText = user.role === 'teacher' ? 'Guru' : 'Siswa'
-        onAuthenticated(
-          user,
-          `Akun ${roleText} berhasil dibuat! Selamat datang di ElectroFun Chemistry, ${user.name}.`
-        )
+      if (mode === 'login') {
+        const user = await loginUser({ identifier: form.identifier, password: form.password, remember })
+        const welcome = user.role === 'teacher'
+          ? `Selamat datang di Panel Guru, ${user.name}!`
+          : `Berhasil masuk. Selamat belajar, ${user.name}!`
+        onAuthenticated(user, welcome)
+      } else if (isRegister) {
+        const user = await registerUser(form)
+        const welcome = user.role === 'teacher'
+          ? 'Akun Guru Pengajar berhasil dibuat! Akses Panel Guru telah diaktifkan.'
+          : `Akun siswa berhasil dibuat. Selamat belajar, ${user.name}!`
+        onAuthenticated(user, welcome)
+      } else if (isForgot) {
+        await requestPasswordReset(form.email.trim())
+        setSuccessMessage('Instruksi pemulihan kata sandi telah dikirim ke email Anda.')
       } else {
-        // Alur Masuk (Email atau Username)
-        user = await loginUser({
-          identifier: form.identifier,
+        await resetPassword({
+          token: resetToken,
           password: form.password,
-          remember
+          confirmPassword: form.confirmPassword,
         })
-
-        const roleGreeting = user.role === 'teacher' ? 'Bapak/Ibu Guru' : 'Siswa'
-        onAuthenticated(user, `Selamat datang kembali, ${user.name}! (${roleGreeting})`)
+        window.history.replaceState({}, '', window.location.pathname)
+        setMode('login')
+        setForm((current) => ({ ...current, password: '', confirmPassword: '' }))
+        setSuccessMessage('Password berhasil diperbarui. Silakan login kembali.')
+        onPasswordReset?.()
       }
     } catch (error) {
-      setMessageType('error')
       setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.')
+    } finally {
       setLoading(false)
     }
   }
 
-  // Handle Masuk sebagai Tamu (Guest)
+  const switchMode = (nextMode) => {
+    setMode(nextMode)
+    setFieldErrors({})
+    setMessage('')
+    setSuccessMessage('')
+  }
+
   const handleGuestLogin = () => {
     try {
-      const guest = loginAsGuest()
-      onAuthenticated(
-        guest,
-        'Masuk sebagai akun Tamu. Anda dapat mengakses seluruh materi dan kuis secara lokal di perangkat ini.'
-      )
-    } catch (err) {
-      setMessageType('error')
-      setMessage('Gagal mengaktifkan sesi tamu. Silakan muat ulang halaman.')
+      onAuthenticated(createGuestUser(), 'Mode Tamu aktif. Materi dan kuis publik tersedia; hasil kuis tidak disimpan.')
+    } catch {
+      setMessage('Mode tamu tidak dapat dimulai di browser ini.')
     }
   }
 
-  const switchMode = (newMode) => {
-    setMode(newMode)
-    setFieldErrors({})
-    setMessage('')
-    setMessageType('error')
-  }
+  const title = isRegister
+    ? 'Buat akun siswa'
+    : isForgot
+      ? 'Pulihkan akun'
+      : isReset
+        ? 'Buat password baru'
+        : 'Selamat Datang Kembali!'
 
   return (
     <main className="auth-page">
@@ -201,17 +197,16 @@ export default function AuthPage({ onAuthenticated, initialError }) {
           <div className="visual-grain" />
           <header className="visual-brand">
             <span className="brand-mark"><FlaskMark /></span>
-            <span className="brand-name">ELECTROFUN <b>CHEMISTRY</b><small>RUANG EKSPERIMEN LARUTAN ELEKTROLIT</small></span>
+            <span className="brand-name">CHEMISTRY <b>LAB</b><small>RUANG EKSPERIMEN RASA INGIN TAHU</small></span>
           </header>
 
           <div className="visual-copy">
-            <span className="eyebrow"><span /> MEDIA PEMBELAJARAN KIMIA • SMA FASE E</span>
+            <span className="eyebrow"><span /> LAB PEMBELAJARAN • FASE E</span>
             <h1>Explore Chemistry<br />Beyond the <em>Classroom.</em></h1>
-            <p>Jelajahi dunia larutan elektrolit dan non-elektrolit melalui simulasi alat uji interaktif, model ion mikroskopik, dan evaluasi konsep bermakna.</p>
+            <p>Kenali dunia larutan elektrolit dan non-elektrolit lewat eksperimen virtual, visualisasi ion, dan tantangan interaktif.</p>
             <div className="visual-tags" aria-label="Topik pembelajaran">
-              <span>01 <i /> Kenali Ion</span>
-              <span>02 <i /> Uji Daya Hantar</span>
-              <span>03 <i /> Virtual Lab</span>
+              <span>01 <i /> Kenali ion</span>
+              <span>02 <i /> Uji daya hantar</span>
             </div>
           </div>
 
@@ -219,7 +214,7 @@ export default function AuthPage({ onAuthenticated, initialError }) {
           <div className="floating-formula formula-two" aria-hidden="true">H₂O</div>
           <div className="visual-caption">
             <span className="caption-dot" />
-            <span>KIMIA X <b>•</b> Larutan Elektrolit &amp; Non-Elektrolit</span>
+            <span>LAB 01 <b>•</b> Larutan &amp; daya hantar listrik</span>
             <span className="caption-line" />
             <span>01 / 03</span>
           </div>
@@ -228,303 +223,113 @@ export default function AuthPage({ onAuthenticated, initialError }) {
         <section className="auth-panel" aria-labelledby="auth-title">
           <div className="mobile-brand">
             <span className="brand-mark"><FlaskMark /></span>
-            <span className="brand-name">ELECTROFUN <b>CHEMISTRY</b></span>
+            <span className="brand-name">CHEMISTRY <b>LAB</b></span>
           </div>
-
           <div className="form-content">
             <span className="form-kicker">
-              {isForgot
-                ? 'PEMULIHAN KATA SANDI'
-                : isRegister
-                ? 'PENDAFTARAN SISWA'
-                : 'SENANG BERTEMU KEMBALI'}
+              {isRegister ? 'MULAI PETUALANGANMU' : isForgot || isReset ? 'BANTUAN AKUN' : 'SENANG BERTEMU KEMBALI'}
             </span>
-
-            <h2 id="auth-title">
-              {isForgot
-                ? 'Lupa Kata Sandi'
-                : isRegister
-                ? 'Buat Akun Siswa Baru'
-                : 'Selamat Datang Kembali!'}
-            </h2>
-
+            <h2 id="auth-title">{title}</h2>
             <p className="form-subtitle">
-              {isForgot
-                ? 'Masukkan email yang terdaftar untuk menerima tautan pemulihan kata sandi.'
-                : isRegister
-                ? 'Lengkapi identitasmu untuk menyimpan progres belajar dan bergabung ke kelas.'
-                : 'Masuk dengan email atau username untuk mengakses dashboard pembelajaranmu.'}
+              {isRegister
+                ? 'Daftar sebagai siswa untuk menyimpan hasil belajar pada akunmu.'
+                : isForgot
+                  ? 'Masukkan email akunmu. Tautan pemulihan hanya dikirim jika layanan email tersedia.'
+                  : isReset
+                    ? 'Pilih password baru yang berbeda dan mudah kamu ingat.'
+                    : 'Masuk untuk memulai pengalaman belajar kimia yang lebih interaktif.'}
             </p>
 
             <form onSubmit={handleSubmit} noValidate>
-              {/* FORM MODE: FORGOT PASSWORD */}
-              {isForgot && (
-                <>
-                  <Field
-                    label="Email Terdaftar"
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    onChange={updateField}
-                    placeholder="nama@email.com"
-                    autoComplete="email"
-                    error={fieldErrors.email}
-                  />
-
-                  {message && (
-                    <div className={`auth-message ${messageType}`} role="alert">
-                      {message}
-                    </div>
-                  )}
-
-                  <button className="auth-submit" type="submit" disabled={loading}>
-                    {loading
-                      ? <><span className="button-spinner" /> Mengirim tautan...</>
-                      : <><span className="auth-submit-label">Kirim Tautan Reset Password</span><span className="auth-submit-icon" aria-hidden="true">✉</span></>}
-                  </button>
-
-                  <div className="auth-switch" style={{ marginTop: '1.25rem' }}>
-                    <button type="button" onClick={() => switchMode('login')}>
-                      ← Kembali ke Halaman Masuk
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* FORM MODE: SIGN UP (REGISTER) */}
               {isRegister && (
                 <>
-                  <Field
-                    label="Nama Lengkap"
-                    id="name"
-                    value={form.name}
-                    onChange={updateField}
-                    placeholder="Nama lengkap siswa"
-                    autoComplete="name"
-                    error={fieldErrors.name}
-                    maxLength={80}
-                  />
-
-                  <Field
-                    label="Username"
-                    id="username"
-                    value={form.username}
-                    onChange={updateField}
-                    placeholder="Contoh: zaenafirda"
-                    autoComplete="username"
-                    error={fieldErrors.username}
-                    maxLength={30}
-                  />
-
-                  <Field
-                    label="Email Aktif"
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    onChange={updateField}
-                    placeholder="nama@email.com"
-                    autoComplete="email"
-                    error={fieldErrors.email}
-                  />
-
-                  {!isTeacherSignup && (
-                    <Field
-                      label="Kelas"
-                      id="className"
-                      value={form.className}
-                      onChange={updateField}
-                      placeholder="Contoh: X-1, X-A, atau X MIPA"
-                      autoComplete="off"
-                      error={fieldErrors.className}
-                      maxLength={30}
-                    />
-                  )}
-
-                  <Field
-                    label="Password"
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={updateField}
-                    placeholder="Minimal 8 karakter"
-                    autoComplete="new-password"
-                    error={fieldErrors.password}
-                  >
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowPassword((visible) => !visible)}
-                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                    >
-                      <EyeIcon visible={showPassword} />
-                    </button>
-                  </Field>
-
-                  <Field
-                    label="Konfirmasi Password"
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={form.confirmPassword}
-                    onChange={updateField}
-                    placeholder="Ulangi password di atas"
-                    autoComplete="new-password"
-                    error={fieldErrors.confirmPassword}
-                  >
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowConfirmPassword((visible) => !visible)}
-                      aria-label={showConfirmPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                    >
-                      <EyeIcon visible={showConfirmPassword} />
-                    </button>
-                  </Field>
-
-                  {/* Opsi Khusus Penetapan Akun Guru via Kode Administrator */}
-                  <div className="teacher-role-box">
-                    <label className="teacher-toggle-label">
-                      <input
-                        type="checkbox"
-                        checked={isTeacherSignup}
-                        onChange={(e) => setIsTeacherSignup(e.target.checked)}
-                      />
-                      <span>Daftar sebagai Guru / Administrator</span>
-                    </label>
-
-                    {isTeacherSignup && (
-                      <div className="teacher-code-input-wrap">
-                        <Field
-                          label="Kode Verifikasi Guru / Admin"
-                          id="adminCode"
-                          type="password"
-                          value={form.adminCode}
-                          onChange={updateField}
-                          placeholder="Masukkan kode resmi administrator"
-                          autoComplete="off"
-                        />
-                        <small className="field-hint">
-                          Akun guru hanya dapat ditetapkan melalui administrator.
-                        </small>
-                      </div>
-                    )}
-                  </div>
-
-                  {message && (
-                    <div className={`auth-message ${messageType}`} role="alert">
-                      {message}
-                    </div>
-                  )}
-
-                  <button className="auth-submit" type="submit" disabled={loading}>
-                    {loading
-                      ? <><span className="button-spinner" /> Mendaftarkan akun...</>
-                      : <><span className="auth-submit-label">Buat Akun &amp; Mulai</span><span className="auth-submit-icon" aria-hidden="true">↗</span></>}
-                  </button>
-
-                  <div className="auth-switch">
-                    Sudah memiliki akun?
-                    <button type="button" onClick={() => switchMode('login')}>Masuk Sekarang</button>
+                  <Field label="Nama lengkap" id="name" value={form.name} onChange={updateField}
+                    placeholder="Nama yang biasa kamu gunakan" autoComplete="name" error={fieldErrors.name} maxLength={80} />
+                  <Field label="Email aktif" id="email" type="email" value={form.email} onChange={updateField}
+                    placeholder="nama@email.com" autoComplete="email" error={fieldErrors.email} maxLength={254} />
+                  <Field label="Username" id="username" value={form.username} onChange={updateField}
+                    placeholder="Contoh: siswa.kimia10" autoComplete="username" error={fieldErrors.username} maxLength={24} />
+                  <div className="auth-register-row">
+                    <Field label="Kelas" id="className" value={form.className} onChange={updateField}
+                      placeholder="Contoh: X-A" autoComplete="off" error={fieldErrors.className} maxLength={40} />
+                    <Field label="Asal sekolah (opsional)" id="school" value={form.school} onChange={updateField}
+                      placeholder="Nama sekolah" autoComplete="organization" maxLength={120} />
                   </div>
                 </>
               )}
-
-              {/* FORM MODE: LOGIN */}
-              {!isRegister && !isForgot && (
+              {isForgot && (
+                <Field label="Email akun" id="email" type="email" value={form.email} onChange={updateField}
+                  placeholder="nama@email.com" autoComplete="email" error={fieldErrors.email} maxLength={254} />
+              )}
+              {mode === 'login' && (
+                <Field label="Email atau username" id="identifier" value={form.identifier || ''} onChange={updateField}
+                  placeholder="nama@email.com atau username" autoComplete="username" error={fieldErrors.identifier} maxLength={254} />
+              )}
+              {(mode === 'login' || isRegister || isReset) && (
                 <>
-                  <Field
-                    label="Email atau Username"
-                    id="identifier"
-                    value={form.identifier}
-                    onChange={updateField}
-                    placeholder="nama@email.com atau username"
-                    autoComplete="username"
-                    error={fieldErrors.identifier}
-                  />
-
-                  <Field
-                    label="Password"
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={updateField}
-                    placeholder="Masukkan kata sandi akunmu"
-                    autoComplete="current-password"
-                    error={fieldErrors.password}
-                  >
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowPassword((visible) => !visible)}
-                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                    >
+                  <Field label={isReset ? 'Password baru' : 'Password'} id="password"
+                    type={showPassword ? 'text' : 'password'} value={form.password} onChange={updateField}
+                    placeholder={isRegister || isReset ? 'Minimal 10 karakter' : 'Masukkan password'}
+                    autoComplete={isReset || isRegister ? 'new-password' : 'current-password'}
+                    error={fieldErrors.password} maxLength={128}>
+                    <button type="button" className="password-toggle" onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}>
                       <EyeIcon visible={showPassword} />
                     </button>
                   </Field>
-
-                  <div className="auth-options-row">
-                    <label className="remember-control">
-                      <input
-                        type="checkbox"
-                        checked={remember}
-                        onChange={(event) => setRemember(event.target.checked)}
-                      />
-                      <span className="custom-checkbox" aria-hidden="true" />
-                      Ingat Saya
-                    </label>
-
-                    <button
-                      type="button"
-                      className="forgot-password-link"
-                      onClick={() => switchMode('forgot')}
-                    >
-                      Lupa Password?
-                    </button>
-                  </div>
-
-                  {message && (
-                    <div className={`auth-message ${messageType}`} role="alert">
-                      {message}
-                    </div>
+                  {(isRegister || isReset) && (
+                    <Field label="Konfirmasi password" id="confirmPassword"
+                      type={showPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={updateField}
+                      placeholder="Ketik ulang password" autoComplete="new-password" error={fieldErrors.confirmPassword}
+                      maxLength={128} />
                   )}
-
-                  <button className="auth-submit" type="submit" disabled={loading}>
-                    {loading
-                      ? <><span className="button-spinner" /> Memverifikasi...</>
-                      : <><span className="auth-submit-label">Masuk ke Pembelajaran</span><span className="auth-submit-icon" aria-hidden="true">↗</span></>}
-                  </button>
-
-                  {/* PEMBATAS & TOMBOL LOGIN AS GUEST */}
-                  <div className="auth-divider">
-                    <span>atau eksplorasi tanpa akun</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="auth-guest-btn"
-                    onClick={handleGuestLogin}
-                    title="Masuk sebagai tamu tanpa membuat akun"
-                  >
-                    <span className="guest-icon" aria-hidden="true">👤</span>
-                    <span>Masuk sebagai Tamu (Guest)</span>
-                  </button>
-
-                  <div className="auth-switch">
-                    Belum memiliki akun?
-                    <button type="button" onClick={() => switchMode('register')}>Daftar Sekarang</button>
-                  </div>
                 </>
               )}
+              {mode === 'login' && (
+                <div className="auth-login-options">
+                  <label className="remember-control">
+                    <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+                    <span className="custom-checkbox" aria-hidden="true" />
+                    Ingat Saya
+                  </label>
+                  <button type="button" className="auth-text-link" onClick={() => switchMode('forgot')}>
+                    Lupa Kata Sandi?
+                  </button>
+                </div>
+              )}
+
+              {message && <div className="auth-message" role="alert">{message}</div>}
+              {successMessage && <div className="auth-success" role="status">{successMessage}</div>}
+
+              <button className="auth-submit" type="submit" disabled={loading}>
+                {loading
+                  ? <><span className="button-spinner" /> Memproses...</>
+                  : <><span className="auth-submit-label">
+                    {isRegister ? 'Daftar sebagai Siswa' : isForgot ? 'Kirim Tautan Pemulihan' : isReset ? 'Simpan Password Baru' : 'Masuk'}
+                  </span><span className="auth-submit-icon" aria-hidden="true">↗</span></>}
+              </button>
             </form>
 
-            <p className="prototype-note">
-              <span aria-hidden="true">🔒</span> Sistem akun aman dengan Firebase Auth &amp; Cloud Firestore.
-            </p>
-          </div>
+            {mode === 'login' && (
+              <>
+                <div className="auth-divider"><span>atau lanjutkan tanpa akun</span></div>
+                <button type="button" className="auth-guest" onClick={handleGuestLogin}>
+                  Masuk sebagai Tamu <span aria-hidden="true">→</span>
+                </button>
+                <p className="auth-guest-note">Materi dan kuis publik tersedia. Hasil belajar tidak disimpan ke akun.</p>
+              </>
+            )}
 
-          <footer className="auth-footer">
-            <span>© 2026 ELECTROFUN CHEMISTRY</span>
-            <span>Materi Larutan Elektrolit &amp; Non-Elektrolit</span>
-          </footer>
+            <div className="auth-switch">
+              {isRegister
+                ? <>Sudah memiliki akun? <button type="button" onClick={() => switchMode('login')}>Masuk sekarang</button></>
+                : isForgot || isReset
+                  ? <button type="button" onClick={() => switchMode('login')}>← Kembali ke Login</button>
+                  : <>Belum memiliki akun? <button type="button" onClick={() => switchMode('register')}>Daftar Sekarang</button></>}
+            </div>
+            <p className="prototype-note"><span aria-hidden="true">🔒</span> Password di-hash di server; sesi dilindungi cookie HttpOnly.</p>
+          </div>
+          <footer className="auth-footer"><span>© 2026 CHEMISTRY LAB</span><span>Dibuat untuk pembelajar masa depan.</span></footer>
         </section>
       </div>
     </main>

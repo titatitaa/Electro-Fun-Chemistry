@@ -66,6 +66,12 @@
   font-size: 0.95rem;
 }
 
+.quiz-save-error {
+  margin: 0 0 1rem;
+  color: #a44738;
+  font-size: 0.9rem;
+}
+
 .quiz-progress {
   margin-bottom: 1.25rem;
 }

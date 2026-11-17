@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isTeacher() {
+      return isAuthenticated() &&
+        (request.auth.token.email in [
+          'guru.kimia@electrolab.id',
+          'guru@electrofun.id',
+          'guru.kimia@gmail.com'
+        ] || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher');
+    }
+
+    // Koleksi Pengguna (users)
+    match /users/{userId} {
+      // Siswa bisa membaca profil sendiri; Guru bisa membaca siswa di kelasnya
+      allow read: if isOwner(userId) || isTeacher();
+
+      // Registrasi awal: Role 'teacher' hanya diizinkan untuk email whitelist
+      allow create: if isAuthenticated() && isOwner(userId) &&
+        (request.resource.data.role == 'student' ||
+         (request.resource.data.role == 'teacher' &&
+          request.auth.token.email in ['guru.kimia@electrolab.id', 'guru@electrofun.id', 'guru.kimia@gmail.com']));
+
+      // Pengguna tidak boleh mengubah role sendiri menjadi teacher
+      allow update: if isOwner(userId) &&
+        request.resource.data.role == resource.data.role;
+
+      allow delete: if false;
+    }
+
+    // Koleksi Kelas (classes)
+    match /classes/{classId} {
+      // Siswa bisa membaca info kelas untuk verifikasi kode bergabung
+      allow read: if isAuthenticated();
+      // Hanya guru yang dapat membuat atau mengubah kelas
+      allow write: if isTeacher();
+    }
+
+    // Koleksi Hasil Kuis Siswa (quiz_submissions)
+    match /quiz_submissions/{submissionId} {
+      // Siswa hanya bisa membaca hasil kuis miliknya sendiri
+      // Guru dapat membaca hasil kuis untuk kelas kewenangannya
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isTeacher());
+
+      // Siswa hanya bisa membuat submisi dengan data ID miliknya sendiri
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status in ['received', 'pending'];
+
+      // Submisi tidak boleh diubah atau dihapus agar riwayat belajar tetap terjaga
+      allow update, delete: if false;
+    }
+  }
+}
+

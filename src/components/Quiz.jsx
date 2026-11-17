@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { courseModules, quizQuestions } from '../data/database.js'
+import { TEACHER_CONFIG } from '../config/teacherConfig.js'
 import './Quiz.css'
 
 export function getSavedQuizState(moduleId) {
@@ -90,6 +91,13 @@ export default function Quiz({
   const [finished, setFinished] = useState(() => {
     return Boolean(savedState?.finished)
   })
+  const [userAnswers, setUserAnswers] = useState(() => (
+    savedState?.userAnswers && typeof savedState.userAnswers === 'object'
+      ? savedState.userAnswers
+      : {}
+  ))
+  const [saveError, setSaveError] = useState('')
+  const completionReported = useRef(false)
 
   // Simpan ke localStorage dengan key `quiz_${moduleId}` setiap kali state berubah
   useEffect(() => {
@@ -102,13 +110,14 @@ export default function Quiz({
         isCorrect,
         score,
         finished,
+        userAnswers,
       }
       localStorage.setItem(`quiz_${moduleId}`, JSON.stringify(stateToSave))
       localStorage.setItem(`quiz-${moduleId}`, JSON.stringify(stateToSave))
     } catch {
       // Ignore error
     }
-  }, [moduleId, questionIndex, selectedOption, isChecked, isCorrect, score, finished])
+  }, [moduleId, questionIndex, selectedOption, isChecked, isCorrect, score, finished, userAnswers])
 
   const currentQuestion = questionsList[questionIndex]
   const options = getQuestionOptions(currentQuestion)
@@ -127,6 +136,25 @@ export default function Quiz({
     if (correct) {
       setScore((prev) => prev + 1)
     }
+
+    const selected = options.find((option) => option.id === selectedOption)
+    const questionId = currentQuestion.id || `question-${questionIndex}`
+    setUserAnswers((prev) => ({
+      ...prev,
+      [questionId]: {
+        questionId,
+        questionText: getQuestionText(currentQuestion),
+        selectedOptionId: selectedOption,
+        selectedOptionText: selected?.text || selectedOption,
+        optionsSnapshot: options.map((option) => ({ id: option.id, teks: option.text })),
+        correctAnswerId: correctAnswer,
+        isCorrect: correct,
+        pembahasan: getExplanation(currentQuestion),
+        caraPengerjaan: currentQuestion.caraPengerjaan || '',
+        rumus: currentQuestion.rumus || '',
+        questionVersion: TEACHER_CONFIG.activeQuestionVersion,
+      },
+    }))
   }
 
   const handleNext = () => {
@@ -138,13 +166,19 @@ export default function Quiz({
     } else {
       const finalScore = score
       setFinished(true)
-      if (typeof onComplete === 'function') {
-        const scoreWrapper = new Number(finalScore)
-        scoreWrapper.score = finalScore
-        scoreWrapper.total = questionsList.length
-        scoreWrapper.moduleId = moduleId
-        scoreWrapper.moduleTitle = module?.title || moduleId
-        onComplete(scoreWrapper)
+      if (typeof onComplete === 'function' && !completionReported.current) {
+        completionReported.current = true
+        Promise.resolve().then(() => onComplete({
+          moduleId,
+          moduleTitle: module?.title || moduleId,
+          score: finalScore,
+          total: questionsList.length,
+          questionVersion: TEACHER_CONFIG.activeQuestionVersion,
+          attemptType: 'evaluation',
+          answers: userAnswers,
+        })).catch((error) => {
+          setSaveError(error instanceof Error ? error.message : 'Hasil kuis tidak dapat disimpan.')
+        })
       }
     }
   }
@@ -164,6 +198,9 @@ export default function Quiz({
     setIsCorrect(false)
     setScore(0)
     setFinished(false)
+    setUserAnswers({})
+    setSaveError('')
+    completionReported.current = false
   }
 
   if (!module && (!propQuestions || propQuestions.length === 0)) {
@@ -256,6 +293,7 @@ export default function Quiz({
                 ? 'Luar biasa, semua soal berhasil dijawab dengan benar!'
                 : 'Terus berlatih untuk memperdalam pemahaman konsep kimia!'}
             </div>
+            {saveError && <p className="quiz-save-error" role="alert">{saveError}</p>}
             <div className="quiz-actions" style={{ justifyContent: 'center' }}>
               <button type="button" className="btn-primary" onClick={handleRestart}>
                 Ulangi Kuis

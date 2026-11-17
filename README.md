@@ -1,53 +1,82 @@
-# React + Vite
+# ElectroFun Chemistry — Media Pembelajaran Kimia SMA
+## Materi: Larutan Elektrolit dan Larutan Nonelektrolit (Fase E • Kelas X)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**ElectroFun Chemistry** adalah media web pembelajaran kimia interaktif yang dirancang dengan prinsip *colorful, joyful, and meaningful* untuk memvisualisasikan keterkaitan antara pengamatan makroskopik, penjelasan submikroskopik (pergerakan ion), dan representasi simbolik kimia.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Fitur Utama
 
-## React Compiler
+1. **Pustaka Materi & Konsep:**
+   - 3 Modul Inti: Kenali Larutan (Modul 1), Laboratorium Mini (Modul 2), dan Jelajahi Ion (Modul 3).
+   - 8 Bab Modul Lanjutan dengan diagram interaktif, persamaan reaksi disosiasi/ionisasi, dan soal konseptual.
+   - Matriks Pencegahan Miskonsepsi Kimia.
+2. **Laboratorium Mini Virtual:**
+   - Simulasi 8 langkah pengujian daya hantar listrik dengan 15 jenis larutan.
+   - Observasi nyala lampu, pembentukan gelembung di elektrode, serta representasi submikroskopik partikel/ion.
+   - Penyusunan dan cetak LKPD praktikum digital.
+3. **8 Fitur Belajar Interaktif:**
+   - *Flashcard & Glosarium*, *Molecular Explorer*, *Concept Map*, *Jurnal Praktikum*, *Tes Diagnostik*, *Chemistry Mission*, *Progres Belajar*, dan *Studi Kasus Nyata*.
+4. **Sistem Akun Role-Based & Keamanan:**
+   - Autentikasi terintegrasi Firebase Authentication dan Cloud Firestore.
+   - Pembedaan peran aman antara **Guru Pengajar (Teacher)**, **Siswa (Student)**, dan **Pengunjung Tamu (Guest)**.
+   - Sistem kode kelas **`KIMIA-X1`** untuk menghubungkan siswa ke kelas guru.
+5. **🏫 Panel Guru (Teacher Dashboard):**
+   - **Dashboard Utama:** 4 Kartu Statistik (Total Siswa, Pengerjaan Kuis, Rata-rata Nilai, Kuis Tersedia), Grafik Batang Distribusi Nilai aktual, Aktivitas Terbaru dengan timestamp penerimaan server, dan Salin Kode Kelas.
+   - **Hasil Kuis Siswa:** Tabel rekapitulasi lengkap dengan filter modul, jenis pengerjaan, versi soal, pencarian siswa, pengurutan, dan **Modal Detail Jawaban Asli Siswa** (butir soal, pilihan siswa, kunci jawaban, dan pembahasan).
+   - **Data Siswa:** Rekapitulasi anggota kelas `KIMIA-X1`, filter kelas asal, pengurutan, dan profil capaian belajar.
+   - **Analisis Pembelajaran:** Ketuntasan Klasikal dengan pengaturan KKM dinamis, perbandingan rata-rata per modul, dan Analisis Butir Soal (Peringkat soal kesalahan tertinggi beserta frekuensi distraktor A–E).
+   - **Navigasi & Keamanan:** Tombol "Kembali ke Beranda" tanpa logout dan tombol Logout resmi.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🔑 Akun Uji Coba
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### 1. Akun Guru Pengajar
+- **Email Guru Resmi:**
+  - `guru.kimia@electrolab.id`
+  - `guru@electrofun.id`
+  - `guru.kimia@gmail.com`
+- **Kata Sandi:** `password123` *(atau kata sandi apa pun saat registrasi awal)*
+- **Role:** `teacher`
+- **Kode Kelas Aktif:** `KIMIA-X1`
 
-## Prototipe autentikasi CHEMISTRY LAB
+### 2. Akun Siswa
+- **Email Siswa A:** `budi@gmail.com` (Nama: Budi Santoso)
+- **Email Siswa B:** `siti@gmail.com` (Nama: Siti Aminah)
+- **Role:** `student`
+- **Cara Bergabung:** Klik tombol **"+ Gabung Kelas"** di session bar atas, lalu masukkan kode **`KIMIA-X1`**.
 
-Halaman awal menyediakan registrasi siswa (nama, email, kelas, dan password), login, validasi formulir, pilihan “Ingat Saya”, dan logout. Setelah masuk, siswa diarahkan ke beranda pembelajaran yang sudah ada.
+### 3. Akun Tamu
+- Klik tombol **"Masuk sebagai Tamu"** pada halaman login untuk eksplorasi mandiri tanpa sinkronisasi kelas.
 
-Autentikasi ini hanya untuk prototipe: akun dan password disimpan di `localStorage` browser, sehingga password belum dienkripsi dan tidak aman untuk penggunaan nyata. Jangan gunakan password pribadi. Sebelum dipakai secara publik, pindahkan autentikasi ke backend dengan HTTPS, penyimpanan password menggunakan hash adaptif yang aman, validasi server, dan pengelolaan sesi/token yang sesuai.
+---
 
-Visual laboratorium pada halaman login menggunakan foto dari Unsplash dan memerlukan koneksi internet.
+## 🛠️ Cara Menjalankan Proyek
 
-## Pustaka materi 8 bab
+### 1. Instalasi Dependensi
+```bash
+npm install
+```
 
-Setelah masuk, bagian “Jelajahi materi dalam 8 bab” membuka materi bertahap tentang larutan, konsep elektrolit, klasifikasi, mekanisme daya hantar, percobaan, faktor, penerapan, dan miskonsepsi. Setiap bab memuat diagram skematis buatan untuk pembelajaran, contoh kontekstual, persamaan, sumber rujukan, rangkuman, refleksi, dan lima soal dengan umpan balik.
+### 2. Menjalankan Server Development
+```bash
+npm run dev
+```
+Buka browser pada alamat yang ditampilkan di terminal (default: `http://localhost:5173`).
 
-Referensi pendidikan dan DOI ditautkan pada tiap bab. Diagram SVG dibuat untuk situs ini dan diberi keterangan sebagai skema konseptual, bukan foto atau hasil pengukuran eksperimen.
+### 3. Pemeriksaan Kualitas Kode (Linter)
+```bash
+npm run lint
+```
 
-## Laboratorium Mini virtual
+### 4. Build Produksi & Preview
+```bash
+npm run build
+npm run preview
+```
 
-Tab Laboratorium di navigasi, tombol “Coba Laboratorium”, dan tombol pada Modul 2 membuka praktikum virtual identifikasi daya hantar. Panduan prosedur delapan langkah membimbing siswa dari perumusan tujuan, pemilihan sampel dan prediksi, pengaturan variabel, persiapan larutan, pengujian, pencatatan, perbandingan data, hingga kesimpulan. Siswa dapat memilih 15 sampel model, membuat prediksi, mengatur konsentrasi/volume/suhu/tegangan/jarak elektrode, melarutkan dan mengaduk solut, mengamati partikel dan respons rangkaian, membandingkan tiga zat pada konsentrasi bersama, lalu menyimpan data dan kesimpulan LKPD. LKPD dapat dicetak atau disimpan sebagai PDF dari dialog cetak browser. Catatan dan tabel pengamatan tersimpan di `localStorage` perangkat.
-
-Perhitungan konduktivitas, mobilitas ion, kesetimbangan elektrolit lemah, dan respons lampu merupakan model pembelajaran sederhana, bukan data eksperimen atau prediksi instrumen akurat. Nilai air mineral merupakan asumsi model; tahap ionisasi kedua asam karbonat dan efek nonideal larutan pekat tidak disimulasikan. Visual partikel serta gelembung tidak berskala. Inspirasi simulasi konsep: [PhET Sugar and Salt Solutions](https://phet.colorado.edu/en/simulations/sugar-and-salt-solutions); fitur dan perhitungan di situs ini dibuat mandiri dan bukan bagian dari PhET.
-
-## Fitur pembelajaran tambahan
-
-Menu **Fitur Belajar** membuka delapan alat yang dimuat saat dipilih:
-
-- **Flashcard & Glosarium** untuk mengulang istilah dan definisi.
-- **Molecular Explorer** untuk menelaah representasi partikel, ion, dan hidrasi.
-- **Concept Map** untuk menyusun, menghubungkan, dan mengevaluasi peta konsep.
-- **Jurnal Praktikum** untuk menulis beberapa catatan dan menautkan pengamatan Laboratorium Mini.
-- **Tes Diagnostik** untuk memeriksa pemahaman konsep dan pola miskonsepsi.
-- **Chemistry Mission** berisi lima tantangan penalaran kimia.
-- **Progres Belajar** merangkum hasil dan aktivitas yang tersimpan.
-- **Studi Kasus** untuk menghubungkan konsep elektrolit dengan konteks sehari-hari.
-
-Progres fitur-fitur tersebut, hasil kuis, bab yang dibuka, aktivitas, serta catatan Laboratorium Mini baru disimpan di `localStorage` browser dan dipisahkan berdasarkan akun yang sedang masuk. Data hanya tersedia pada browser/perangkat yang sama dan dapat hilang jika data situs dihapus. Penanda penyelesaian tiga modul lama masih menggunakan key lokal bersama yang sudah dipakai aplikasi sebelumnya; penanda itu tidak menjadi bukti penyelesaian bab materi. Catatan laboratorium lama tanpa identitas akun tetap tersimpan, tetapi tidak dicampurkan dengan progres akun.
-
-Jalankan proyek secara lokal dengan `npm install`, lalu `npm run dev`. Gunakan `npm run lint` dan `npm run build` untuk pemeriksaan statis dan build produksi. Autentikasi lokal serta seluruh penyimpanan di browser hanya untuk prototipe; gunakan backend dengan pengelolaan password dan sesi yang aman sebelum deployment publik.
+### 5. Menjalankan Skrip Pengujian Sistem (20 Skenario Otomatis)
+```bash
+node tests/systemTest.js
+```

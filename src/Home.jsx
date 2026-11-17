@@ -7,53 +7,18 @@ import Quiz from './components/Quiz.jsx'
 import ExpandedCourse from './components/ExpandedCourse.jsx'
 import VirtualLab from './components/VirtualLab.jsx'
 import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
-import { readLearningData, recordLearningActivity, writeLearningData } from './data/learningStore.js'
-import { submitQuizSubmission } from './auth.js'
-import { quizQuestions } from './data/database.js'
+import { recordLearningActivity } from './data/learningStore.js'
+import { saveQuizResult } from './auth.js'
 
 export default function Home({ user }) {
+  const progressKey = `electrofun_progress:${user?.id || 'anonymous'}`
   const [activeNav, setActiveNav] = useState('beranda')
-  const [activeModal, setActiveModal] = useState(() => {
-    try {
-      const savedModal = localStorage.getItem('electrofun_active_modal')
-      if (savedModal) return savedModal
-
-      if (typeof window !== 'undefined' && window.location.hash.includes('kuis')) {
-        return 'quiz-page'
-      }
-
-      const savedAnswers = localStorage.getItem('quiz-answers')
-      const wasClosed = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('electrofun_modal_closed') : null
-      if (savedAnswers && !wasClosed) {
-        const parsed = JSON.parse(savedAnswers)
-        if (parsed && Object.keys(parsed).length > 0) {
-          return 'quiz-page'
-        }
-      }
-    } catch {}
-    return null
-  })
-
-  const [quizModuleId, setQuizModuleId] = useState(() => {
-    try {
-      const savedModuleId = localStorage.getItem('electrofun_quiz_module_id')
-      if (savedModuleId) return savedModuleId
-
-      const savedAnswers = localStorage.getItem('quiz-answers')
-      if (savedAnswers) {
-        const parsed = JSON.parse(savedAnswers)
-        const answeredIds = Object.keys(parsed || {})
-        if (answeredIds.length > 0) {
-          const found = quizQuestions.find((q) => q.id === answeredIds[0])
-          if (found) return found.modulId
-        }
-      }
-    } catch {}
-    return null
-  })
+  const [activeModal, setActiveModal] = useState(null) // 'modul-1', 'modul-2', 'modul-3', 'kuis', 'lab'
+  const [learningActivityVersion, setLearningActivityVersion] = useState(0)
+  const [quizModuleId, setQuizModuleId] = useState(null)
   const [completedModules, setCompletedModules] = useState(() => {
     try {
-      const saved = localStorage.getItem('electrofun_progress')
+      const saved = localStorage.getItem(progressKey)
       return saved ? JSON.parse(saved) : []
     } catch {
       return []
@@ -69,7 +34,7 @@ export default function Home({ user }) {
         updated = [...completedModules, moduleId]
       }
       setCompletedModules(updated)
-      localStorage.setItem('electrofun_progress', JSON.stringify(updated))
+      if (user?.role !== 'guest') localStorage.setItem(progressKey, JSON.stringify(updated))
     } catch {
       // Handle silently
     }
@@ -77,7 +42,7 @@ export default function Home({ user }) {
 
   const handleResetProgress = () => {
     try {
-      localStorage.removeItem('electrofun_progress')
+      localStorage.removeItem(progressKey)
       setCompletedModules([])
     } catch {
       // Handle silently
@@ -123,32 +88,32 @@ export default function Home({ user }) {
     setLearningActivityVersion((value) => value + 1)
   }
 
-  const handleQuizComplete = (result) => {
-    const userId = user?.id || user?.email || 'anonymous'
-    const results = readLearningData(userId, 'quiz-results', [])
-    const next = [{
-      ...result,
-      completedAt: new Date().toISOString(),
-    }, ...results].slice(0, 100)
-    writeLearningData(userId, 'quiz-results', next)
-    recordLearningActivity(userId, {
-      type: 'quiz',
-      title: 'Menyelesaikan kuis',
-      detail: `${result.moduleTitle}: ${result.score}/${result.total} jawaban benar.`,
-    }, handleLearningActivity)
-
-    // Jika akun terdaftar / siswa anggota kelas, kirim ke database Firestore agar terbaca di Panel Guru
-    if (user && !user.isGuest && user.role !== 'guest') {
-      submitQuizSubmission({
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        classCode: user.classCode || null,
-        moduleId: result.moduleId,
-        score: result.score,
-        totalQuestions: result.total,
-        answers: result.answers || {}
-      }).catch((err) => console.warn('Gagal sync ke cloud:', err))
+  const handleQuizComplete = async (result) => {
+    if (user?.role === 'student') {
+      try {
+        await saveQuizResult({
+          userId: user.id || user.uid,
+          userName: user.name || user.displayName || 'Siswa',
+          userEmail: user.email || '',
+          classCode: user.classCode || null,
+          moduleId: result.moduleId,
+          moduleTitle: result.moduleTitle,
+          attemptType: result.attemptType || 'evaluation',
+          questionVersion: result.questionVersion || 'v1.0',
+          score: result.score,
+          totalQuestions: result.total,
+          answers: result.answers || {},
+        })
+      } catch (err) {
+        console.warn('Gagal sinkronisasi kuis ke database:', err)
+      }
+    }
+    if (user?.role !== 'guest') {
+      recordLearningActivity(user.id, {
+        type: 'quiz',
+        title: 'Menyelesaikan kuis',
+        detail: `${result.moduleTitle}: ${result.score}/${result.total} jawaban benar.`,
+      }, handleLearningActivity)
     }
   }
 
@@ -163,47 +128,12 @@ export default function Home({ user }) {
   const handleStartQuiz = (moduleId = null) => {
     setQuizModuleId(moduleId)
     setActiveModal('quiz-page')
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('electrofun_modal_closed')
-      }
-    } catch {}
   }
 
   const closeModal = () => {
     setActiveModal(null)
     setQuizModuleId(null)
-    try {
-      localStorage.removeItem('electrofun_active_modal')
-      localStorage.removeItem('electrofun_quiz_module_id')
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('electrofun_modal_closed', 'true')
-      }
-    } catch {}
   }
-
-  useEffect(() => {
-    try {
-      if (activeModal) {
-        localStorage.setItem('electrofun_active_modal', activeModal)
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.removeItem('electrofun_modal_closed')
-        }
-      } else {
-        localStorage.removeItem('electrofun_active_modal')
-      }
-    } catch {}
-  }, [activeModal])
-
-  useEffect(() => {
-    try {
-      if (quizModuleId) {
-        localStorage.setItem('electrofun_quiz_module_id', quizModuleId)
-      } else {
-        localStorage.removeItem('electrofun_quiz_module_id')
-      }
-    } catch {}
-  }, [quizModuleId])
 
   // Close modal on Escape key
   useEffect(() => {
@@ -616,7 +546,7 @@ export default function Home({ user }) {
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={() => handleStartQuiz('modul-3')}
+                    onClick={() => setActiveModal('kuis')}
                   >
                     Uji Pemahaman di Kuis →
                   </button>
@@ -630,6 +560,7 @@ export default function Home({ user }) {
                 moduleId={quizModuleId}
                 onSelectModule={setQuizModuleId}
                 onClose={closeModal}
+                onComplete={handleQuizComplete}
               />
             )}
           </div>
