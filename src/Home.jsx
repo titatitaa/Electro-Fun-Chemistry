@@ -597,6 +597,7 @@ export default function Home({ user }) {
                 <li><a href="#laboratorium" onClick={(e) => { e.preventDefault(); handleNavigate('laboratorium'); }}>Laboratorium Mini (Modul 2)</a></li>
                 <li><a href="#materi" onClick={(e) => { e.preventDefault(); handleSelectModule('modul-3'); }}>Jelajahi Ion (Modul 3)</a></li>
                 <li><a href="#kuis" onClick={(e) => { e.preventDefault(); handleStartQuiz(); }}>Kuis Evaluasi</a></li>
+                <li><a href="#panduan" onClick={(e) => { e.preventDefault(); document.getElementById('btn-panduan')?.click(); }}>Panduan Penggunaan</a></li>
               </ul>
             </div>
 

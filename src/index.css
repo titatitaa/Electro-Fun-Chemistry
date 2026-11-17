@@ -583,6 +583,73 @@ a {
   justify-content: center;
 }
 
+/* Badge pill ion Na+ dan Cl- di pojok kiri atas apparatus */
+.apparatus-ion-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 50;
+  background: #ffffff;
+  opacity: 0.95;
+  border: 2px solid #203864;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  box-shadow: 0 4px 14px rgba(32, 56, 100, 0.16);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+  transition: all var(--transition-normal);
+}
+
+.apparatus-ion-pill .ion-badge-na {
+  color: #1E40AF;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.apparatus-ion-pill .ion-badge-cl {
+  color: #B91C1C;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.apparatus-ion-pill .ion-separator {
+  color: #94A3B8;
+  font-size: 12px;
+}
+
+.apparatus-ion-pill sup,
+.apparatus-ion-pill sub {
+  font-size: 0.72em;
+  font-weight: 800;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+  top: -0.45em;
+}
+
+.apparatus-ion-pill sub {
+  top: 0.25em;
+}
+
+@media (max-width: 600px) {
+  .apparatus-ion-pill {
+    top: 12px;
+    left: 12px;
+    padding: 5px 12px;
+    font-size: 14px;
+  }
+}
+
 .apparatus-svg {
   width: 100%;
   max-width: 480px;
@@ -590,36 +657,39 @@ a {
   display: block;
 }
 
-/* Particle animation */
+/* Particle animation inside beaker - loops infinitely */
 @keyframes floatParticle {
-  0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-5px) scale(1.08); }
-  100% { transform: translateY(0) scale(1); }
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
-
-@keyframes bubbleRise {
-  0% { opacity: 0; transform: translateY(0); }
-  50% { opacity: 0.8; }
-  100% { opacity: 0; transform: translateY(-22px); }
-}
-
-.bubble-anim-1 { animation: bubbleRise 1.6s infinite ease-in; }
-.bubble-anim-2 { animation: bubbleRise 1.9s 0.4s infinite ease-in; }
-.bubble-anim-3 { animation: bubbleRise 1.4s 0.8s infinite ease-in; }
 
 .particle-ion {
-  animation: floatParticle 3s infinite ease-in-out;
+  animation: floatParticle 2.8s infinite ease-in-out;
   cursor: pointer;
+  will-change: transform;
 }
 
-.particle-ion:nth-child(2n) {
+/* Stagger animation timing so ions float independently like real particles */
+g:nth-child(2n) > .particle-ion {
+  animation-duration: 2.3s;
+  animation-delay: 0.35s;
+}
+
+g:nth-child(3n) > .particle-ion {
+  animation-duration: 3.2s;
+  animation-delay: 0.7s;
+}
+
+g:nth-child(4n) > .particle-ion {
   animation-duration: 2.6s;
-  animation-delay: 0.4s;
-}
-
-.particle-ion:nth-child(3n) {
-  animation-duration: 3.4s;
-  animation-delay: 0.8s;
+  animation-delay: 1.1s;
 }
 
 /* Apparatus Explanation Card */
