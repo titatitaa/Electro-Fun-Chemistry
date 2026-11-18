@@ -74,28 +74,40 @@ const STORAGE_KEY = 'compare_records'
 // Slot posisi partikel terpisah di dalam batas cairan beker (jarak aman anti-tumpuk)
 const PARTICLE_SLOTS = [
   { x: 150, y: 188 },
-  { x: 180, y: 180 },
   { x: 210, y: 188 },
-  { x: 165, y: 212 },
-  { x: 195, y: 212 },
-  { x: 150, y: 238 },
-  { x: 210, y: 238 },
+  { x: 180, y: 208 },
+  { x: 148, y: 232 },
+  { x: 212, y: 232 },
+  { x: 180, y: 250 },
 ]
+
+// Rumus singkat edukatif agar muat sempurna di dalam lingkaran partikel
+function formatShortFormula(formula) {
+  if (!formula) return ''
+  if (formula === 'CH₃COOH') return 'HAc'
+  if (formula === 'CH₃COO⁻') return 'Ac⁻'
+  if (formula === 'C₁₂H₂₂O₁₁') return 'Sukr'
+  if (formula === 'C₆H₁₂O₆') return 'Gluk'
+  if (formula === 'CO(NH₂)₂') return 'Urea'
+  if (formula === 'C₂H₅OH') return 'EtOH'
+  if (formula === 'H₂O + mineral') return 'Min'
+  return formula
+}
 
 // Filter partikel yang digambar (edukatif, tidak berskala nyata, agar tidak saling menimpa)
 function getDisplayParticles(solution, particles) {
   if (solution.category === 'lemah') {
-    // Untuk elektrolit lemah: 1 pasang ion (1 kation + 1 anion) + sekitar 5 molekul netral
+    // Untuk elektrolit lemah: 1 pasang ion (1 kation + 1 anion) + 4 molekul netral
     const cation = particles.find((p) => p.type === 'cation')
     const anion = particles.find((p) => p.type === 'anion')
-    const neutrals = particles.filter((p) => p.type === 'neutral').slice(0, 5)
+    const neutrals = particles.filter((p) => p.type === 'neutral').slice(0, 4)
     const list = []
     if (cation) list.push({ ...cation, id: `${cation.id}-cat` })
     if (anion) list.push({ ...anion, id: `${anion.id}-ani` })
     neutrals.forEach((n, idx) => list.push({ ...n, id: `${n.id}-neu-${idx}` }))
-    return list.slice(0, 7)
+    return list.slice(0, 6)
   }
-  return particles.slice(0, 7)
+  return particles.slice(0, 6)
 }
 
 function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
@@ -281,15 +293,17 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
             </text>
           </g>
 
-          {/* Partikel Tersebar di Dalam Batas Cairan Beker (Jarak aman, font terbaca, tidak menumpuk) */}
+          {/* Partikel Tersebar di Dalam Batas Cairan Beker (Jarak aman, rumus singkat, anti-tumpuk) */}
           {displayParticles.map((particle, idx) => {
             const slot = PARTICLE_SLOTS[idx % PARTICLE_SLOTS.length]
+            const shortLabel = formatShortFormula(particle.formula)
             return (
               <g key={particle.id} transform={`translate(${slot.x}, ${slot.y})`}>
+                <title>{particle.formula}</title>
                 <g className={`compare-particle ${particle.type}${isPowered ? ' moving' : ''}`}>
-                  <circle r={9.5} />
-                  <text y="2.5" textAnchor="middle" fontSize="6.5" fontWeight="800">
-                    {particle.formula}
+                  <circle r={10} />
+                  <text y="2.5" textAnchor="middle" fontSize="6.2" fontWeight="800">
+                    {shortLabel}
                   </text>
                 </g>
               </g>
