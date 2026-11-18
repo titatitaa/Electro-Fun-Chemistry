@@ -1,0 +1,336 @@
+.learning-progress {
+  display: grid;
+  gap: 1rem;
+  color: #293d33;
+}
+
+.learning-progress-heading,
+.learning-progress-card {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgba(32, 59, 104, .1);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(32, 59, 104, .05);
+}
+
+.learning-progress-heading {
+  position: relative;
+  background: linear-gradient(110deg, #eff9f3, #fff8ec);
+}
+
+.learning-progress-kicker,
+.learning-recommendations article > span {
+  color: #188c78;
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+.learning-progress-heading h1 {
+  margin: .25rem 0;
+  color: #203b68;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+.learning-progress-heading p,
+.learning-progress-card > p {
+  color: #66746a;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.learning-progress-refresh {
+  margin-top: .55rem;
+  padding: .5rem .75rem;
+  border: 1px solid #d5e6db;
+  border-radius: 9px;
+  background: #fff;
+  color: #286347;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.learning-progress-refresh:hover {
+  background: #eff8f1;
+}
+
+.learning-progress-card h2 {
+  margin: 0 0 .75rem;
+  color: #203b68;
+  font-size: 1rem;
+}
+
+.learning-progress-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.learning-progress-card-title h2 {
+  margin: 0;
+}
+
+.learning-progress-card-title p {
+  margin: .25rem 0 0;
+  color: #77827a;
+  font-size: .72rem;
+}
+
+.learning-progress-card-title > strong {
+  color: #237b55;
+  font-size: 1.35rem;
+}
+
+.learning-progress-track {
+  height: 11px;
+  margin: .8rem 0;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #e8eee8;
+}
+
+.learning-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #26976b, #d6aa59);
+  transition: width .25s ease;
+}
+
+.learning-progress-module-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.learning-progress-module-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .3rem .5rem;
+  border-radius: 20px;
+  background: #f0f3f0;
+  color: #77827a;
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.learning-progress-module-list span.complete {
+  background: #e7f4eb;
+  color: #286347;
+}
+
+.learning-progress-module-list i {
+  font-style: normal;
+}
+
+.learning-progress-caveat {
+  margin-top: .7rem;
+  color: #879188;
+  font-size: .64rem;
+  line-height: 1.5;
+}
+
+.learning-progress-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: .65rem;
+}
+
+.learning-progress-metric {
+  display: grid;
+  gap: .2rem;
+  min-width: 0;
+  padding: .85rem;
+  border: 1px solid #e6ece5;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.learning-progress-metric span {
+  color: #78847b;
+  font-size: .68rem;
+  font-weight: 750;
+}
+
+.learning-progress-metric strong {
+  overflow-wrap: anywhere;
+  color: #203b68;
+  font-size: 1.15rem;
+}
+
+.learning-progress-metric small {
+  color: #89938b;
+  font-size: .62rem;
+}
+
+.learning-progress-chart {
+  display: grid;
+  gap: .65rem;
+}
+
+.learning-progress-chart-row {
+  display: grid;
+  grid-template-columns: minmax(115px, .7fr) minmax(80px, 1.5fr) minmax(88px, .55fr);
+  align-items: center;
+  gap: .65rem;
+}
+
+.learning-progress-chart-row > span {
+  color: #657369;
+  font-size: .68rem;
+}
+
+.learning-progress-chart-row > div {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e9eee8;
+}
+
+.learning-progress-chart-row > div > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38a181, #e1b45e);
+  transition: width .25s ease;
+}
+
+.learning-progress-chart-row > strong {
+  color: #53675a;
+  font-size: .62rem;
+  text-align: right;
+}
+
+.learning-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.learning-competency-list,
+.learning-activity-list {
+  display: grid;
+  gap: .6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-competency-list li {
+  display: grid;
+  grid-template-columns: 1.2rem minmax(0, 1fr);
+  gap: .1rem .45rem;
+  color: #77827a;
+  font-size: .75rem;
+}
+
+.learning-competency-list li i {
+  grid-row: span 2;
+  color: #a4ada5;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.learning-competency-list li.mastered {
+  color: #286347;
+}
+
+.learning-competency-list li.mastered i {
+  color: #2b9360;
+}
+
+.learning-competency-list small {
+  color: #909a92;
+  font-size: .63rem;
+}
+
+.learning-activity-list li {
+  display: grid;
+  gap: .15rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid #edf0ec;
+}
+
+.learning-activity-list li:last-child {
+  border-bottom: 0;
+}
+
+.learning-activity-list strong {
+  color: #40594a;
+  font-size: .72rem;
+}
+
+.learning-activity-list span,
+.learning-activity-list time {
+  color: #818d83;
+  font-size: .63rem;
+  line-height: 1.45;
+}
+
+.learning-progress-empty {
+  padding: .8rem;
+  border-radius: 9px;
+  background: #f7f8f5;
+  color: #77827a;
+  font-size: .72rem;
+  line-height: 1.55;
+}
+
+.learning-recommendations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: .6rem;
+}
+
+.learning-recommendations article {
+  display: grid;
+  align-content: start;
+  gap: .3rem;
+  padding: .75rem;
+  border: 1px solid #e8eee7;
+  border-radius: 10px;
+  background: #fbfcf9;
+}
+
+.learning-recommendations article > span {
+  font-size: .57rem;
+}
+
+.learning-recommendations article strong {
+  color: #40594a;
+  font-size: .73rem;
+}
+
+.learning-recommendations article p {
+  color: #818d83;
+  font-size: .64rem;
+  line-height: 1.5;
+}
+
+.learning-progress-refresh-state {
+  color: #237b55;
+  font-size: .68rem;
+}
+
+@media (max-width: 640px) {
+  .learning-progress-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-progress-chart-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .35rem .5rem;
+  }
+
+  .learning-progress-chart-row > div {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .learning-progress-chart-row > strong {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

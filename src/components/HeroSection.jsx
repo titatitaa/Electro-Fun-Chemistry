@@ -20,12 +20,12 @@ export default function HeroSection({ onStartLearning, onOpenLab }) {
       reaction: 'NaCl(s) \u2192 Na\u207A(aq) + Cl\u207B(aq)',
       description: 'Zat terdisosiasi sempurna menghasilkan konsentrasi ion bergerak tinggi. Arus listrik mengalir lancar sehingga lampu menyala terang dan banyak gelembung gas di elektrode.',
       ions: [
-        { label: 'Na⁺', type: 'cation', x: 195, y: 260, color: '#16A6A1' },
-        { label: 'Cl⁻', type: 'anion', x: 265, y: 275, color: '#203864' },
-        { label: 'Na⁺', type: 'cation', x: 235, y: 310, color: '#16A6A1' },
-        { label: 'Cl⁻', type: 'anion', x: 175, y: 320, color: '#203864' },
-        { label: 'Na⁺', type: 'cation', x: 295, y: 290, color: '#16A6A1' },
-        { label: 'Cl⁻', type: 'anion', x: 215, y: 345, color: '#203864' },
+        { label: 'Na⁺', type: 'cation', x: 195, y: 260, color: '#1E40AF' },
+        { label: 'Cl⁻', type: 'anion', x: 265, y: 275, color: '#B91C1C' },
+        { label: 'Na⁺', type: 'cation', x: 235, y: 310, color: '#1E40AF' },
+        { label: 'Cl⁻', type: 'anion', x: 205, y: 325, color: '#B91C1C' },
+        { label: 'Na⁺', type: 'cation', x: 295, y: 290, color: '#1E40AF' },
+        { label: 'Cl⁻', type: 'anion', x: 215, y: 345, color: '#B91C1C' },
       ]
     },
     weak: {
@@ -204,6 +204,49 @@ export default function HeroSection({ onStartLearning, onOpenLab }) {
 
             {/* SVG Apparatus Stage */}
             <div className="apparatus-stage-box">
+              {/* Badge pill ion di pojok kiri atas apparatus (top: 12px, left: 12px) */}
+              {selectedSample === 'strong' && (
+                <div
+                  className="apparatus-ion-pill"
+                  id="beaker-ion-label-pill"
+                  aria-label="Label ion: Na+ dan Cl-"
+                >
+                  <span className="ion-badge ion-badge-na">
+                    Na<sup>+</sup>
+                  </span>
+                  <span className="ion-separator" aria-hidden="true">•</span>
+                  <span className="ion-badge ion-badge-cl">
+                    Cl<sup>-</sup>
+                  </span>
+                </div>
+              )}
+              {selectedSample === 'weak' && (
+                <div
+                  className="apparatus-ion-pill"
+                  id="beaker-ion-label-pill"
+                  aria-label="Label ion: H3O+ dan CH3COO-"
+                >
+                  <span className="ion-badge" style={{ color: '#1E40AF' }}>
+                    H<sub>3</sub>O<sup>+</sup>
+                  </span>
+                  <span className="ion-separator" aria-hidden="true">•</span>
+                  <span className="ion-badge" style={{ color: '#B91C1C' }}>
+                    CH<sub>3</sub>COO<sup>-</sup>
+                  </span>
+                </div>
+              )}
+              {selectedSample === 'non' && (
+                <div
+                  className="apparatus-ion-pill"
+                  id="beaker-ion-label-pill"
+                  aria-label="Label partikel: Sukrosa"
+                >
+                  <span className="ion-badge" style={{ color: '#8A6DCE' }}>
+                    Sukrosa (Molekul)
+                  </span>
+                </div>
+              )}
+
               <svg
                 viewBox="0 0 460 380"
                 className="apparatus-svg"
@@ -404,27 +447,28 @@ export default function HeroSection({ onStartLearning, onOpenLab }) {
                   {current.ions.map((ion, idx) => (
                     <g
                       key={`${current.id}-ion-${idx}`}
-                      className="particle-ion"
                       transform={`translate(${ion.x}, ${ion.y})`}
                     >
-                      {ion.isMolecule ? (
-                        /* Neutral Molecule Representation (Pill/capsule shape for sugar or acetic acid molecule) */
-                        <g>
-                          <rect x="-24" y="-10" width="48" height="20" rx="10" fill={ion.color} opacity="0.9" />
-                          <text x="0" y="3.5" fill="#FFFFFF" fontSize="8.5" fontWeight="700" textAnchor="middle">
-                            {ion.label}
-                          </text>
-                        </g>
-                      ) : (
-                        /* Charged Mobile Ion Representation */
-                        <g>
-                          <circle cx="0" cy="0" r="14" fill={ion.color} />
-                          <circle cx="0" cy="0" r="12" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.5" />
-                          <text x="0" y="4.5" fill="#FFFFFF" fontSize="10" fontWeight="bold" textAnchor="middle">
-                            {ion.label}
-                          </text>
-                        </g>
-                      )}
+                      <g className="particle-ion">
+                        {ion.isMolecule ? (
+                          /* Neutral Molecule Representation (Pill/capsule shape for sugar or acetic acid molecule) */
+                          <g>
+                            <rect x="-24" y="-10" width="48" height="20" rx="10" fill={ion.color} opacity="0.9" />
+                            <text x="0" y="3.5" fill="#FFFFFF" fontSize="8.5" fontWeight="700" textAnchor="middle">
+                              {ion.label}
+                            </text>
+                          </g>
+                        ) : (
+                          /* Charged Mobile Ion Representation */
+                          <g>
+                            <circle cx="0" cy="0" r="14" fill={ion.color} stroke="#FFFFFF" strokeWidth="1.2" />
+                            <circle cx="0" cy="0" r="12" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+                            <text x="0" y="4.5" fill="#FFFFFF" fontSize="10.5" fontWeight="bold" textAnchor="middle">
+                              {ion.label}
+                            </text>
+                          </g>
+                        )}
+                      </g>
                     </g>
                   ))}
                 </g>

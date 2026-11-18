@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearning }) {
+export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearning, onOpenLearningFeatures }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleNavClick = (id, e) => {
@@ -34,7 +34,7 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
           href="#beranda" 
           className="navbar-brand"
           onClick={(e) => handleNavClick('beranda', e)}
-          aria-label="ElectroFun Chemistry Beranda"
+          aria-label="CHEMISTRY LAB Beranda"
         >
           <div className="navbar-logo-wrap" aria-hidden="true">
             {/* Custom Chemistry Icon: Erlenmeyer with spark */}
@@ -48,9 +48,8 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
           </div>
           <div className="navbar-brand-text">
             <span className="navbar-title">
-              <span className="brand-electro">Electro</span>
-              <span className="brand-fun">Fun</span>
-              <span className="brand-chem">Chemistry</span>
+              <span className="brand-electro">CHEMISTRY</span>
+              <span className="brand-fun">LAB</span>
             </span>
             <span className="navbar-tagline">SMA Kelas X • Fase E</span>
           </div>
@@ -62,7 +61,7 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
             <li>
               <a
                 href="#beranda"
-                id="nav-link-beranda"
+                id="nav-beranda"
                 className={`nav-link ${activeNav === 'beranda' ? 'active' : ''}`}
                 onClick={(e) => handleNavClick('beranda', e)}
               >
@@ -76,7 +75,7 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
             <li>
               <a
                 href="#materi"
-                id="nav-link-materi"
+                id="nav-materi"
                 className={`nav-link ${activeNav === 'materi' ? 'active' : ''}`}
                 onClick={(e) => handleNavClick('materi', e)}
               >
@@ -91,7 +90,7 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
             <li>
               <a
                 href="#laboratorium"
-                id="nav-link-laboratorium"
+                id="nav-lab"
                 className={`nav-link ${activeNav === 'laboratorium' ? 'active' : ''}`}
                 onClick={(e) => handleNavClick('laboratorium', e)}
               >
@@ -106,7 +105,7 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
             <li>
               <a
                 href="#kuis"
-                id="nav-link-kuis"
+                id="nav-kuis"
                 className={`nav-link ${activeNav === 'kuis' ? 'active' : ''}`}
                 onClick={(e) => handleNavClick('kuis', e)}
               >
@@ -118,6 +117,20 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
                 Kuis
               </a>
             </li>
+            <li>
+              <a
+                href="#fitur-belajar"
+                id="nav-fitur"
+                className={`nav-link ${activeNav === 'learning-tools' ? 'active' : ''}`}
+                onClick={(event) => {
+                  event.preventDefault()
+                  setMobileMenuOpen(false)
+                  onOpenLearningFeatures?.()
+                }}
+              >
+                Fitur Belajar
+              </a>
+            </li>
           </ul>
         </nav>
 
@@ -125,7 +138,16 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
         <div className="navbar-actions">
           <button
             type="button"
-            id="nav-btn-mulai-belajar"
+            id="btn-panduan"
+            className="btn-secondary"
+            title="Panduan Penggunaan Website"
+          >
+            <span>Panduan</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-mulai-belajar"
             className="btn-primary"
             onClick={handleStartClick}
           >
@@ -199,6 +221,23 @@ export default function Navbar({ activeNav = 'beranda', onNavigate, onStartLearn
             >
               Kuis
             </a>
+          </li>
+          <li>
+            <button type="button" className={`mobile-nav-link ${activeNav === 'learning-tools' ? 'active' : ''}`} onClick={() => { setMobileMenuOpen(false); onOpenLearningFeatures?.() }}>
+              Fitur Belajar
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="mobile-nav-link"
+              onClick={() => {
+                setMobileMenuOpen(false)
+                document.getElementById('btn-panduan')?.click()
+              }}
+            >
+              Panduan Penggunaan
+            </button>
           </li>
           <li style={{ marginTop: '0.5rem' }}>
             <button

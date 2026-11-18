@@ -297,4 +297,184 @@ export const courseModules = [
   },
 ]
 
+export const moduleLearningSupports = {
+  'modul-1': {
+    subtopics: [
+      {
+        macroscopic: 'Kristal garam dan gula sama-sama dapat menghilang dari pandangan saat diaduk ke dalam air; keduanya membentuk campuran homogen.',
+        submicroscopic: 'Molekul air menarik ion dari kisi NaCl dan menghidrasi Na⁺ serta Cl⁻. Molekul sukrosa yang polar berinteraksi dengan air, tetapi molekulnya tetap utuh.',
+        symbolic: 'NaCl(s) → Na⁺(aq) + Cl⁻(aq); C₁₂H₂₂O₁₁(s) → C₁₂H₂₂O₁₁(aq)',
+        reflection: 'Jika larutan garam dan larutan gula sama-sama jernih, pengamatan tambahan apa yang diperlukan untuk membedakan partikel penyusunnya?',
+        citation: 'OpenStax (2019, §11.1).',
+      },
+      {
+        macroscopic: 'Pada alat uji sederhana, larutan garam biasanya menyalakan lampu; larutan gula tidak menunjukkan nyala yang berarti pada kondisi yang sama.',
+        submicroscopic: 'Ion yang bergerak membawa muatan melalui larutan. Kation bergerak menuju katode (elektrode negatif), sedangkan anion menuju anode (elektrode positif).',
+        symbolic: 'NaCl(aq) → Na⁺(aq) + Cl⁻(aq); HCl(aq) + H₂O(l) → H₃O⁺(aq) + Cl⁻(aq)',
+        reflection: 'Mengapa elektron menjadi pembawa muatan di kabel, tetapi ion menjadi pembawa muatan di dalam larutan?',
+        citation: 'OpenStax (2019, §11.2).',
+      },
+      {
+        macroscopic: 'Nyala lampu memberi petunjuk kualitatif tentang arus dalam alat tertentu, tetapi tidak mengukur langsung fraksi zat yang terionisasi.',
+        submicroscopic: 'Larutan garam larut memiliki ion, larutan asam asetat mengandung ion dan molekul netral, sedangkan larutan gula didominasi molekul netral.',
+        symbolic: 'NaCl(aq) → ion-ion; CH₃COOH(aq) + H₂O(l) ⇌ H₃O⁺(aq) + CH₃COO⁻(aq); sukrosa(aq) tetap molekuler.',
+        reflection: 'Mengapa hasil uji nyala harus dibandingkan pada konsentrasi dan kondisi alat yang sama?',
+        citation: 'OpenStax (2019, §11.2); Suari (2019).',
+      },
+    ],
+    applications: {
+      title: 'Elektrolit di sekitar kita',
+      note: 'Contoh berikut menjelaskan komposisi secara umum. Produk komersial dapat mengandung campuran zat; jangan menyimpulkan konduktivitas hanya dari nama atau kejernihannya.',
+      rows: [
+        ['Air garam', 'NaCl terlarut terdisosiasi menjadi ion bergerak.', 'Elektrolit; daya hantar bergantung pada konsentrasi dan kondisi.'],
+        ['Air mineral', 'Mengandung ion mineral terlarut dalam kadar yang bervariasi.', 'Dapat menghantarkan listrik; hasil antarproduk tidak sama.'],
+        ['Larutan gula', 'Sukrosa larut sebagai molekul netral, bukan ion.', 'Nonelektrolit untuk sukrosa murni dalam air.'],
+        ['Cuka', 'Asam asetat terionisasi sebagian dalam air.', 'Elektrolit lemah; cuka pangan adalah campuran.'],
+        ['Minuman elektrolit', 'Dapat mengandung ion seperti Na⁺, K⁺, dan Cl⁻ serta zat lain.', 'Konduktivitas ditentukan oleh komposisi, bukan klaim kemasan saja.'],
+        ['Cairan aki timbal-asam', 'Elektrolitnya adalah larutan asam sulfat; baterai menghasilkan listrik melalui reaksi redoks.', 'Bukan sekadar alat uji konduktivitas; jangan membuka atau menangani aki.'],
+        ['Pupuk cair', 'Komposisi berbeda; pupuk yang mengandung garam terlarut menyediakan ion.', 'Ikuti label dan prosedur keselamatan produk.'],
+      ],
+      image: {
+        src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Car_battery_cross-section.jpeg/500px-Car_battery_cross-section.jpeg',
+        alt: 'Foto potongan melintang aki mobil yang memperlihatkan bagian dalam baterai timbal-asam.',
+        caption: 'Aki mobil timbal-asam: contoh penerapan elektrokimia, bukan foto uji daya hantar larutan.',
+        source: 'Wikimedia Commons, “Car battery cross-section.jpeg”',
+        author: 'Ben Cossalter',
+        license: 'CC BY-SA 3.0',
+        licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+        pageUrl: 'https://commons.wikimedia.org/wiki/File:Car_battery_cross-section.jpeg',
+      },
+    },
+  },
+  'modul-2': {
+    subtopics: [
+      {
+        macroscopic: 'Pada rangkaian tertutup, lampu dapat menyala ketika ada jalur penghantar melalui larutan.',
+        submicroscopic: 'Elektron bergerak melalui kawat; di larutan, kation dan anion bergerak ke elektrode dengan muatan berlawanan. Reaksi elektrode dapat terjadi pada permukaannya.',
+        symbolic: 'Kawat: aliran elektron; larutan: perpindahan ion. Anode (+) menarik anion dan katode (−) menarik kation pada alat elektrolisis.',
+        reflection: 'Di bagian mana rangkaian elektron harus digantikan oleh gambaran gerak ion?',
+        citation: 'OpenStax (2019, §11.2).',
+        visual: {
+          src: 'https://openstax.org/apps/image-cdn/v1/f=webp/apps/archive/20260604.144757/resources/187c4636de22e76c8ee80d274211b6dfbdbe35aa',
+          alt: 'Diagram OpenStax yang membandingkan respons tiga larutan pada rangkaian uji lampu.',
+          caption: 'Gambar 11.6 membandingkan partikel zat dan daya hantar secara skematis. Ilustrasi buku menampilkan stopkontak sebagai gambaran konseptual—jangan ditiru; praktik kelas hanya boleh memakai sumber tegangan rendah di bawah pengawasan guru.',
+          source: 'Flowers et al., Chemistry 2e, Figure 11.6, OpenStax',
+          author: 'OpenStax, Rice University',
+          license: 'CC BY-NC-SA 4.0',
+          licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+          pageUrl: 'https://openstax.org/books/chemistry-2e/pages/11-2-electrolytes',
+        },
+      },
+      {
+        macroscopic: 'Percobaan membandingkan larutan dalam volume, suhu, waktu pengamatan, jenis elektrode, dan jarak elektrode yang dibuat sama.',
+        submicroscopic: 'Jenis zat memengaruhi jenis dan jumlah ion yang ada; suhu serta konsentrasi juga mengubah gerak dan jumlah pembawa muatan.',
+        symbolic: 'Variabel bebas: jenis larutan. Variabel terikat: arus atau nyala. Variabel kontrol: konsentrasi, volume, suhu, elektrode, dan geometri.',
+        reflection: 'Apa yang harus dibuat tetap agar perbedaan hasil dapat dikaitkan dengan jenis larutan?',
+        citation: 'OpenStax (2019, §11.2).',
+      },
+      {
+        macroscopic: 'Catat nyala dan gelembung sebagai pengamatan terpisah; gelembung hanya muncul jika reaksi elektrode menghasilkan gas dalam kondisi tersebut.',
+        submicroscopic: 'Lampu merespons arus total, yang dipengaruhi konsentrasi, muatan, dan mobilitas ion serta rancangan alat.',
+        symbolic: 'Konduktivitas bergantung pada konsentrasi dan mobilitas ion; tidak sama dengan derajat ionisasi saja.',
+        reflection: 'Jika lampu padam, kontrol apa yang memastikan bahwa alat masih berfungsi?',
+        citation: 'OpenStax (2019, §11.2 dan §17.7).',
+      },
+    ],
+    observationTable: {
+      title: 'Prakiraan kualitatif uji beberapa larutan',
+      label: 'Prakiraan ilustratif—bukan data eksperimen. Hasil aktual bergantung pada konsentrasi, suhu, komposisi, elektrode, dan sensitivitas alat.',
+      headers: ['Sampel', 'Partikel utama dalam air', 'Prakiraan respons alat sederhana'],
+      rows: [
+        ['NaCl(aq)', 'Na⁺ dan Cl⁻ terhidrasi', 'Lampu biasanya jelas pada konsentrasi memadai.'],
+        ['CH₃COOH(aq)', 'Molekul CH₃COOH serta sebagian H₃O⁺ dan CH₃COO⁻', 'Nyala dapat lebih redup; dipengaruhi konsentrasi dan alat.'],
+        ['Sukrosa(aq)', 'Molekul sukrosa netral', 'Tidak ada nyala berarti pada alat sederhana.'],
+        ['Air mineral', 'Air dan ion mineral dengan kadar bervariasi', 'Respons dapat berbeda antarproduk.'],
+        ['Air suling', 'H₂O dengan jumlah sangat kecil H₃O⁺ dan OH⁻', 'Biasanya tidak tampak menyala pada alat sederhana.'],
+      ],
+      interpretation: 'Tabel ini membantu membuat hipotesis, bukan menggantikan pengukuran. Air murni tidak benar-benar bebas ion, dan lampu yang padam hanya berarti arus tidak teramati dengan kondisi uji itu.',
+    },
+  },
+  'modul-3': {
+    subtopics: [
+      {
+        macroscopic: 'Kristal garam larut dan menyebar; asam asetat bercampur dengan air tanpa terlihat terpisah.',
+        submicroscopic: 'Pada disosiasi, ion yang sudah ada pada zat ionik terpisah. Pada ionisasi, molekul netral bereaksi dengan air membentuk ion.',
+        symbolic: 'NaCl(s) → Na⁺(aq) + Cl⁻(aq); CH₃COOH(aq) + H₂O(l) ⇌ H₃O⁺(aq) + CH₃COO⁻(aq)',
+        reflection: 'Dari persamaan reaksi, bagaimana kamu mengetahui apakah zat awalnya berupa ion atau molekul netral?',
+        citation: 'OpenStax (2019, §§11.1, 14.1).',
+      },
+      {
+        macroscopic: 'Larutan elektrolit kuat umumnya memberi respons arus lebih jelas daripada larutan elektrolit lemah pada kondisi sebanding; ini bukan aturan untuk membandingkan sampel sembarang.',
+        submicroscopic: 'Elektrolit kuat menghasilkan banyak ion dari zat terlarut; elektrolit lemah berada dalam kesetimbangan dengan molekul netral; nonelektrolit tetap terutama molekuler.',
+        symbolic: 'HCl(aq) + H₂O(l) → H₃O⁺(aq) + Cl⁻(aq); CH₃COOH(aq) + H₂O(l) ⇌ H₃O⁺(aq) + CH₃COO⁻(aq)',
+        reflection: 'Mengapa kata “kuat” tidak dapat dipakai untuk menyatakan larutan itu pekat?',
+        citation: 'OpenStax (2019, §§11.2, 14.3); Suari (2019); Syauqiah et al. (2024).',
+      },
+      {
+        macroscopic: 'Pengenceran menurunkan jumlah zat per volume; perubahan nyala atau bacaan konduktivitas perlu ditafsirkan bersama perubahan fraksi ionisasi.',
+        submicroscopic: 'Untuk elektrolit lemah, pengenceran umumnya meningkatkan fraksi yang terionisasi, tetapi menurunkan konsentrasi total partikel per volume.',
+        symbolic: 'α = n terionisasi ÷ n mula-mula; Ka = [H₃O⁺][CH₃COO⁻] ÷ [CH₃COOH]. Untuk CH₃COOH, Ka ≈ 1,8 × 10⁻⁵ pada 25 °C.',
+        reflection: 'Bagaimana α bisa meningkat sementara jumlah ion per volume atau konduktivitas terukur tidak meningkat?',
+        citation: 'OpenStax (2019, §14.3).',
+      },
+    ],
+    structureTable: {
+      title: 'Struktur zat dan perilaku dalam air',
+      headers: ['Jenis zat', 'Saat zat dilarutkan', 'Contoh'],
+      rows: [
+        ['Senyawa ionik yang larut', 'Ion dalam kisi terpisah dan terhidrasi (disosiasi).', 'NaCl → Na⁺ + Cl⁻'],
+        ['Molekul kovalen yang bereaksi dengan air', 'Molekul membentuk ion melalui reaksi (ionisasi).', 'HCl + H₂O → H₃O⁺ + Cl⁻'],
+        ['Molekul kovalen yang tidak membentuk ion', 'Molekul netral tetap tersebar di antara molekul air.', 'Sukrosa(aq)'],
+      ],
+      interpretation: 'Jenis ikatan memberi petunjuk awal, tetapi kelarutan dan reaksi zat dengan air menentukan apakah ion bergerak terbentuk. Tidak semua senyawa kovalen nonelektrolit dan tidak semua zat ionik larut banyak.',
+    },
+    factorsTable: {
+      title: 'Faktor yang memengaruhi daya hantar larutan',
+      headers: ['Faktor', 'Pengaruh terhadap pengamatan'],
+      rows: [
+        ['Konsentrasi ion', 'Lebih banyak pembawa muatan per volume umumnya meningkatkan konduktivitas; hubungan tidak selalu linear pada semua konsentrasi.'],
+        ['Muatan dan jumlah ion', 'Stoikiometri disosiasi dan besar muatan memengaruhi banyaknya muatan yang dapat dibawa.'],
+        ['Jenis dan mobilitas ion', 'Ion yang berbeda bergerak dengan laju berbeda dalam medan listrik; karena itu jenis ion penting, bukan hanya jumlahnya.'],
+        ['Derajat ionisasi', 'Menentukan fraksi zat terlarut yang menjadi ion; sangat penting untuk membandingkan elektrolit kuat dan lemah.'],
+        ['Temperatur', 'Perubahan suhu memengaruhi gerak ion, viskositas pelarut, dan kesetimbangan; bandingkan sampel pada suhu yang sama.'],
+        ['Alat dan geometri', 'Jarak dan luas elektrode, tegangan, serta sensitivitas sensor memengaruhi arus atau bacaan yang teramati.'],
+      ],
+      interpretation: 'Konduktivitas terukur merupakan sifat larutan dan kondisi pengukuran sekaligus. Untuk membandingkan jenis zat, kendalikan konsentrasi, suhu, dan geometri elektrode.',
+    },
+  },
+}
+
+export const courseReferences = [
+  {
+    citation: 'Flowers, P., Theopold, K., Langley, R., & Robinson, W. R. (2019). Chemistry 2e. OpenStax, Rice University.',
+    linkText: 'https://openstax.org/details/books/chemistry-2e',
+    url: 'https://openstax.org/details/books/chemistry-2e',
+    type: 'Buku teks kimia terbuka; §§11.1–11.2, 14.1, 14.3, 17.2, dan 17.7.',
+  },
+  {
+    citation: 'Suari, N. N. J. (2019). Profil model mental siswa tentang larutan elektrolit dan nonelektrolit. Jurnal Pendidikan Kimia Indonesia, 2(2), 59.',
+    linkText: 'https://doi.org/10.23887/jpk.v2i2.16615',
+    url: 'https://doi.org/10.23887/jpk.v2i2.16615',
+    type: 'Penelitian pendidikan kimia; membahas variasi model mental siswa.',
+  },
+  {
+    citation: 'Widayanti, Y. (2021). The development of e-instrument to test students mental models on electrolyte and non-electrolyte solutions. Edukimia, 3(3), 174–177.',
+    linkText: 'https://doi.org/10.24036/ekj.v3.i3.a287',
+    url: 'https://doi.org/10.24036/ekj.v3.i3.a287',
+    type: 'Penelitian pengembangan instrumen; validasi, bukan uji efektivitas pembelajaran.',
+  },
+  {
+    citation: 'Hasna, H., Laksmiwati, D., Hadisaputra, S., & Muti’ah. (2023). Development of a contextual-based chemistry e-module on electrolyte and non-electrolyte solutions for high school students. Chemistry Education Practice, 6(1), 123–127.',
+    linkText: 'https://doi.org/10.29303/cep.v6i1.3608',
+    url: 'https://doi.org/10.29303/cep.v6i1.3608',
+    type: 'Penelitian pengembangan e-modul kontekstual.',
+  },
+  {
+    citation: 'Syauqiah, N., Rahmawati, H., & Irawati, R. K. (2024). Validity of student worksheets based on multiple representations of electrolyte and non-electrolyte solution materials. Journal of Mathematics Science and Computer Education, 4(1), 35.',
+    linkText: 'https://doi.org/10.20527/jmscedu.v4i1.11322',
+    url: 'https://doi.org/10.20527/jmscedu.v4i1.11322',
+    type: 'Penelitian pengembangan LKPD berbasis multipel representasi; melaporkan validasi ahli.',
+  },
+]
+
 export { quizQuestions }

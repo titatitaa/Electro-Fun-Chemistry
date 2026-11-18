@@ -1,0 +1,936 @@
+/* =============================================================================
+   TEACHER DASHBOARD (PANEL GURU) STYLES
+   ElectroFun Chemistry — Tema: Colorful, Joyful, and Meaningful
+   ============================================================================= */
+
+:root {
+  --teacher-navy: #203864;
+  --teacher-teal: #16a6a1;
+  --teacher-orange: #f4a340;
+  --teacher-purple: #8a6dce;
+  --teacher-coral: #f26b5b;
+  --teacher-bg: #f8fafc;
+  --teacher-sidebar-bg: #1e293b;
+  --teacher-card-bg: #ffffff;
+  --teacher-text-main: #1e293b;
+  --teacher-text-muted: #64748b;
+  --teacher-border: #e2e8f0;
+  --teacher-success: #10b981;
+  --teacher-danger: #ef4444;
+}
+
+.teacher-dashboard-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  background: var(--teacher-bg);
+  color: var(--teacher-text-main);
+  font-family: inherit;
+  overflow: hidden;
+}
+
+/* -----------------------------------------------------------------------------
+   SIDEBAR NAVIGATION
+   ----------------------------------------------------------------------------- */
+.teacher-sidebar {
+  width: 270px;
+  background: var(--teacher-sidebar-bg);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.25s ease-in-out;
+  z-index: 20;
+}
+
+.teacher-sidebar-header {
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.teacher-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.teacher-logo-badge {
+  width: 38px;
+  height: 38px;
+  background: var(--teacher-teal);
+  color: #fff;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(22, 166, 161, 0.35);
+}
+
+.teacher-app-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.teacher-app-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  display: block;
+}
+
+.teacher-sidebar-close {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.teacher-sidebar-menu {
+  flex: 1;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.teacher-menu-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  padding: 0.6rem 0.75rem 0.25rem;
+}
+
+.teacher-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.teacher-nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.teacher-nav-item.active {
+  background: var(--teacher-teal);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(22, 166, 161, 0.35);
+}
+
+.teacher-nav-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.teacher-sidebar-footer {
+  padding: 1rem 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.teacher-btn-logout-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.teacher-btn-logout-sidebar:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fee2e2;
+}
+
+/* -----------------------------------------------------------------------------
+   MAIN CONTENT AREA
+   ----------------------------------------------------------------------------- */
+.teacher-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.teacher-topbar {
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--teacher-border);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.teacher-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.teacher-sidebar-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--teacher-border);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.teacher-page-breadcrumb {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--teacher-navy);
+}
+
+.teacher-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.teacher-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.teacher-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--teacher-navy);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.teacher-name-box {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.teacher-name-box strong {
+  font-size: 0.88rem;
+  color: var(--teacher-navy);
+}
+
+.teacher-role-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #065f46;
+  background: #d1fae5;
+  padding: 1px 7px;
+  border-radius: 10px;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.teacher-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* -----------------------------------------------------------------------------
+   BANNER KODE KELAS & KICKER
+   ----------------------------------------------------------------------------- */
+.teacher-hero-banner {
+  background: linear-gradient(135deg, #203864 0%, #172554 100%);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(32, 56, 100, 0.16);
+}
+
+.banner-left {
+  max-width: 600px;
+}
+
+.hero-kicker {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--teacher-orange);
+  margin-bottom: 0.4rem;
+}
+
+.banner-left h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.4rem;
+  color: #ffffff;
+}
+
+.banner-left p {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.banner-class-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  min-width: 220px;
+  text-align: center;
+}
+
+.code-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #cbd5e1;
+  margin-bottom: 0.35rem;
+}
+
+.code-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.code-display {
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  font-family: var(--font-mono, monospace);
+}
+
+.copy-btn {
+  background: var(--teacher-teal);
+  color: #ffffff;
+  border: none;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.copy-btn.copied {
+  background: var(--teacher-success);
+}
+
+.banner-class-card small {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  display: block;
+}
+
+/* -----------------------------------------------------------------------------
+   4 KARTU STATISTIK UTAMA
+   ----------------------------------------------------------------------------- */
+.teacher-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--teacher-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stat-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.stat-icon-wrap.students { background: #e0f2fe; color: #0284c7; }
+.stat-icon-wrap.submissions { background: #fef3c7; color: #d97706; }
+.stat-icon-wrap.average { background: #dcfce7; color: #16a34a; }
+.stat-icon-wrap.modules { background: #f3e8ff; color: #9333ea; }
+
+.stat-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--teacher-text-muted);
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--teacher-navy);
+}
+
+.stat-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* -----------------------------------------------------------------------------
+   SECTION BOXES & TABLES
+   ----------------------------------------------------------------------------- */
+.teacher-section-box {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  border: 1px solid var(--teacher-border);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-header-row h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--teacher-navy);
+  margin: 0;
+}
+
+.section-header-row p {
+  font-size: 0.84rem;
+  color: var(--teacher-text-muted);
+  margin: 0.2rem 0 0;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.filter-input, .filter-select {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--teacher-border);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  color: var(--teacher-text-main);
+  outline: none;
+  background: #ffffff;
+}
+
+.filter-input:focus, .filter-select:focus {
+  border-color: var(--teacher-teal);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.teacher-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.teacher-table th {
+  background: #f8fafc;
+  padding: 0.75rem 0.85rem;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid var(--teacher-border);
+  white-space: nowrap;
+}
+
+.teacher-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--teacher-text-main);
+}
+
+.teacher-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.sub-meta {
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.module-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+
+.score-badge.high { background: #dcfce7; color: #15803d; }
+.score-badge.medium { background: #fef3c7; color: #b45309; }
+.score-badge.low { background: #fee2e2; color: #b91c1c; }
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.status-badge.received { background: #d1fae5; color: #065f46; }
+.status-badge.pending { background: #fef3c7; color: #92400e; }
+
+.btn-view-detail {
+  padding: 0.4rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: var(--teacher-navy);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-view-detail:hover {
+  background: var(--teacher-teal);
+  border-color: var(--teacher-teal);
+  color: #ffffff;
+}
+
+/* -----------------------------------------------------------------------------
+   GRAFIK BATANG (DISTRIBUSI NILAI & PERBANDINGAN MODUL)
+   ----------------------------------------------------------------------------- */
+.chart-container {
+  padding: 1rem 0;
+}
+
+.bar-chart-grid {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  height: 200px;
+  padding: 1rem 0.5rem 0.5rem;
+  border-bottom: 2px solid var(--teacher-border);
+}
+
+.bar-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.bar-fill-track {
+  width: 100%;
+  max-width: 48px;
+  background: #f1f5f9;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  position: relative;
+}
+
+.bar-fill-value {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease;
+  min-height: 4px;
+}
+
+.bar-fill-value.teal { background: var(--teacher-teal); }
+.bar-fill-value.blue { background: #0284c7; }
+.bar-fill-value.orange { background: var(--teacher-orange); }
+.bar-fill-value.purple { background: var(--teacher-purple); }
+.bar-fill-value.coral { background: var(--teacher-coral); }
+
+.bar-count-tag {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--teacher-navy);
+  white-space: nowrap;
+}
+
+.bar-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.chart-caption {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 0.75rem;
+  display: block;
+}
+
+/* -----------------------------------------------------------------------------
+   ANALISIS PEMBELAJARAN (KETUNTASAN & BUTIR SOAL)
+   ----------------------------------------------------------------------------- */
+.kkm-setting-box {
+  background: #f8fafc;
+  border: 1px solid var(--teacher-border);
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.kkm-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kkm-input {
+  width: 70px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-align: center;
+  border: 1.5px solid var(--teacher-border);
+  border-radius: 6px;
+}
+
+.mastery-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.mastery-card {
+  padding: 1.1rem;
+  border-radius: 10px;
+  border: 1px solid var(--teacher-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.mastery-card.success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.mastery-card.warning {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.mastery-num {
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+/* Analisis Butir Soal Ranking */
+.item-analysis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.item-analysis-card {
+  border: 1px solid var(--teacher-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  background: #ffffff;
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.item-rank-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.item-error-rate {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.item-question-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--teacher-navy);
+  margin-bottom: 0.85rem;
+  line-height: 1.5;
+}
+
+.options-distractor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.distractor-chip {
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  background: #f8fafc;
+  border: 1px solid var(--teacher-border);
+  display: flex;
+  justify-content: space-between;
+}
+
+.distractor-chip.is-key {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+  font-weight: 700;
+}
+
+.item-explanation-box {
+  background: #f8fafc;
+  border-left: 3px solid var(--teacher-teal);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+/* -----------------------------------------------------------------------------
+   EMPTY STATE & MODAL
+   ----------------------------------------------------------------------------- */
+.teacher-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--teacher-text-muted);
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.detail-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(5px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.detail-modal-card {
+  width: min(760px, 100%);
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.detail-modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--teacher-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--teacher-navy);
+  margin: 0;
+}
+
+.detail-modal-header button {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.detail-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.detail-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.84rem;
+}
+
+.detail-answers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detail-answer-item {
+  border: 1px solid var(--teacher-border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.detail-answer-item.correct {
+  border-left: 4px solid var(--teacher-success);
+}
+
+.detail-answer-item.incorrect {
+  border-left: 4px solid var(--teacher-danger);
+}
+
+/* -----------------------------------------------------------------------------
+   RESPONSIVITAS (MOBILE & 375px)
+   ----------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .teacher-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+  }
+
+  .teacher-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .teacher-sidebar-close, .teacher-sidebar-toggle {
+    display: block;
+  }
+
+  .teacher-hero-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .banner-class-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .teacher-topbar {
+    padding: 0 1rem;
+  }
+
+  .teacher-content-scroll {
+    padding: 1rem;
+  }
+
+  .bar-chart-grid {
+    gap: 0.75rem;
+  }
+}
+

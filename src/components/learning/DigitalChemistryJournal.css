@@ -1,0 +1,356 @@
+.digital-journal {
+  display: grid;
+  gap: 1rem;
+  color: #293d33;
+}
+
+.digital-journal-heading,
+.digital-journal-list,
+.digital-journal-editor,
+.digital-journal-empty {
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid rgba(32, 59, 104, .1);
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(32, 59, 104, .05);
+}
+
+.digital-journal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: linear-gradient(110deg, #eff9f3, #fff8ec);
+}
+
+.digital-journal-kicker {
+  color: #188c78;
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+.digital-journal-heading h1 {
+  margin: .25rem 0;
+  color: #203b68;
+  font-size: clamp(1.3rem, 3vw, 1.9rem);
+}
+
+.digital-journal-heading p {
+  color: #68766d;
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.digital-journal-primary,
+.digital-journal-secondary,
+.digital-journal-delete {
+  padding: .58rem .8rem;
+  border: 1px solid #d5e6db;
+  border-radius: 9px;
+  background: #fff;
+  color: #286347;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.digital-journal-primary {
+  flex: 0 0 auto;
+  border-color: #267750;
+  background: #27764f;
+  color: #fff;
+}
+
+.digital-journal-primary:hover {
+  background: #1d6441;
+}
+
+.digital-journal-secondary:hover {
+  background: #eff8f1;
+}
+
+.digital-journal-delete {
+  border-color: #f0d7d1;
+  color: #9a5144;
+}
+
+.digital-journal-layout {
+  display: grid;
+  grid-template-columns: minmax(190px, .34fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.digital-journal-list {
+  position: sticky;
+  top: 1rem;
+}
+
+.digital-journal-list h2,
+.digital-journal-observations h2 {
+  margin: 0 0 .7rem;
+  color: #203b68;
+  font-size: .95rem;
+}
+
+.digital-journal-list > p {
+  color: #77827a;
+  font-size: .7rem;
+  line-height: 1.5;
+}
+
+.digital-journal-list ul {
+  display: grid;
+  gap: .45rem;
+  max-height: 65vh;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.digital-journal-list li button {
+  display: grid;
+  width: 100%;
+  gap: .2rem;
+  padding: .6rem;
+  border: 1px solid #edf0ec;
+  border-radius: 9px;
+  background: #fbfcf9;
+  text-align: left;
+}
+
+.digital-journal-list li button.active {
+  border-color: #9fcbb0;
+  background: #eff8f1;
+}
+
+.digital-journal-list li strong {
+  color: #40594a;
+  font-size: .68rem;
+}
+
+.digital-journal-list li span {
+  color: #8a948c;
+  font-size: .58rem;
+}
+
+.digital-journal-editor {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.digital-journal-identity {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  padding: .75rem;
+  border: 1px solid #e8eee7;
+  border-radius: 10px;
+  background: #f8faf6;
+}
+
+.digital-journal-identity span {
+  display: grid;
+  gap: .18rem;
+  min-width: 0;
+}
+
+.digital-journal-identity small {
+  color: #818d83;
+  font-size: .62rem;
+}
+
+.digital-journal-identity strong {
+  overflow-wrap: anywhere;
+  color: #40594a;
+  font-size: .72rem;
+}
+
+.digital-journal-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+}
+
+.digital-journal-sections label {
+  display: grid;
+  align-content: start;
+  gap: .35rem;
+}
+
+.digital-journal-sections label > span {
+  color: #47574d;
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.digital-journal-sections textarea {
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  padding: .65rem;
+  border: 1px solid #e0e7e0;
+  border-radius: 8px;
+  color: #34463a;
+  font: 500 .72rem/1.5 var(--font-sans);
+}
+
+.digital-journal-sections textarea:focus {
+  border-color: #12a6a4;
+  outline: 3px solid rgba(18, 166, 164, .13);
+}
+
+.digital-journal-sections textarea::placeholder {
+  color: #9aa49c;
+}
+
+.digital-journal-observations {
+  display: grid;
+  gap: .65rem;
+  padding: .8rem;
+  border: 1px solid #e5ece5;
+  border-radius: 11px;
+  background: #fbfcf9;
+}
+
+.digital-journal-observations > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+}
+
+.digital-journal-observations h2 {
+  margin: .15rem 0 0;
+}
+
+.digital-journal-table-scroll {
+  overflow: auto;
+  border: 1px solid #e5eae4;
+  border-radius: 8px;
+}
+
+.digital-journal-table-scroll table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  background: white;
+  font-size: .65rem;
+  text-align: left;
+}
+
+.digital-journal-table-scroll th,
+.digital-journal-table-scroll td {
+  padding: .5rem;
+  border-bottom: 1px solid #edf0ec;
+  vertical-align: top;
+}
+
+.digital-journal-table-scroll th {
+  background: #f3f7f2;
+  color: #53675a;
+}
+
+.digital-journal-empty-data {
+  padding: .75rem;
+  border-radius: 8px;
+  background: white;
+  color: #818d83;
+  font-size: .68rem;
+  line-height: 1.5;
+}
+
+.digital-journal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+  padding-top: .75rem;
+  border-top: 1px solid #edf0ec;
+}
+
+.digital-journal-actions > span {
+  flex: 1 1 100%;
+  color: #77827a;
+  font-size: .66rem;
+}
+
+.digital-journal-empty {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-height: 260px;
+  text-align: center;
+}
+
+.digital-journal-empty > span {
+  color: #b7c8b9;
+  font-size: 2rem;
+}
+
+.digital-journal-empty h2 {
+  color: #203b68;
+  font-size: 1rem;
+}
+
+.digital-journal-empty p {
+  max-width: 360px;
+  margin-bottom: .8rem;
+  color: #77827a;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .digital-journal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .digital-journal-list {
+    position: static;
+  }
+
+  .digital-journal-list ul {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 540px) {
+  .digital-journal-heading,
+  .digital-journal-observations > div:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .digital-journal-sections,
+  .digital-journal-identity {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .digital-journal-list,
+  .digital-journal-primary,
+  .digital-journal-secondary,
+  .digital-journal-delete {
+    display: none !important;
+  }
+
+  .digital-journal-layout {
+    display: block;
+  }
+
+  .digital-journal-heading,
+  .digital-journal-editor {
+    box-shadow: none;
+  }
+
+  .digital-journal-sections textarea {
+    border: 1px solid #aaa;
+    min-height: 50px;
+  }
+}

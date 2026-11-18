@@ -4,51 +4,21 @@ import HeroSection from './components/HeroSection.jsx'
 import TopicCards from './components/TopicCards.jsx'
 import ModuleLesson from './components/ModuleLesson.jsx'
 import Quiz from './components/Quiz.jsx'
-import { quizQuestions } from './data/database.js'
+import ExpandedCourse from './components/ExpandedCourse.jsx'
+import VirtualLab from './components/VirtualLab.jsx'
+import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
+import { recordLearningActivity } from './data/learningStore.js'
+import { saveQuizResult } from './auth.js'
 
-export default function Home() {
+export default function Home({ user }) {
+  const progressKey = `electrofun_progress:${user?.id || 'anonymous'}`
   const [activeNav, setActiveNav] = useState('beranda')
-  const [activeModal, setActiveModal] = useState(() => {
-    try {
-      const savedModal = localStorage.getItem('electrofun_active_modal')
-      if (savedModal) return savedModal
-
-      if (typeof window !== 'undefined' && window.location.hash.includes('kuis')) {
-        return 'quiz-page'
-      }
-
-      const savedAnswers = localStorage.getItem('quiz-answers')
-      const wasClosed = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('electrofun_modal_closed') : null
-      if (savedAnswers && !wasClosed) {
-        const parsed = JSON.parse(savedAnswers)
-        if (parsed && Object.keys(parsed).length > 0) {
-          return 'quiz-page'
-        }
-      }
-    } catch {}
-    return null
-  })
-
-  const [quizModuleId, setQuizModuleId] = useState(() => {
-    try {
-      const savedModuleId = localStorage.getItem('electrofun_quiz_module_id')
-      if (savedModuleId) return savedModuleId
-
-      const savedAnswers = localStorage.getItem('quiz-answers')
-      if (savedAnswers) {
-        const parsed = JSON.parse(savedAnswers)
-        const answeredIds = Object.keys(parsed || {})
-        if (answeredIds.length > 0) {
-          const found = quizQuestions.find((q) => q.id === answeredIds[0])
-          if (found) return found.modulId
-        }
-      }
-    } catch {}
-    return null
-  })
+  const [activeModal, setActiveModal] = useState(null) // 'modul-1', 'modul-2', 'modul-3', 'kuis', 'lab'
+  const [learningActivityVersion, setLearningActivityVersion] = useState(0)
+  const [quizModuleId, setQuizModuleId] = useState(null)
   const [completedModules, setCompletedModules] = useState(() => {
     try {
-      const saved = localStorage.getItem('electrofun_progress')
+      const saved = localStorage.getItem(progressKey)
       return saved ? JSON.parse(saved) : []
     } catch {
       return []
@@ -64,7 +34,7 @@ export default function Home() {
         updated = [...completedModules, moduleId]
       }
       setCompletedModules(updated)
-      localStorage.setItem('electrofun_progress', JSON.stringify(updated))
+      if (user?.role !== 'guest') localStorage.setItem(progressKey, JSON.stringify(updated))
     } catch {
       // Handle silently
     }
@@ -72,7 +42,7 @@ export default function Home() {
 
   const handleResetProgress = () => {
     try {
-      localStorage.removeItem('electrofun_progress')
+      localStorage.removeItem(progressKey)
       setCompletedModules([])
     } catch {
       // Handle silently
@@ -81,16 +51,17 @@ export default function Home() {
 
   const handleNavigate = (targetId) => {
     setActiveNav(targetId)
+    if (targetId === 'learning-tools') {
+      setActiveModal('learning-tools')
+      return
+    }
     if (targetId === 'kuis') {
       setQuizModuleId(null)
       setActiveModal('quiz-page')
       return
     }
     if (targetId === 'laboratorium') {
-      const heroApparatus = document.getElementById('beranda')
-      if (heroApparatus) {
-        heroApparatus.scrollIntoView({ behavior: 'smooth' })
-      }
+      setActiveModal('virtual-lab')
       return
     }
     const elem = document.getElementById(targetId)
@@ -104,7 +75,50 @@ export default function Home() {
   }
 
   const handleOpenLab = () => {
-    setActiveModal('module-page:modul-2')
+    setActiveModal('virtual-lab')
+  }
+
+  const handleOpenLearningFeatures = (feature = '') => {
+    setActiveNav('learning-tools')
+    setLearningActivityVersion((value) => value + 1)
+    setActiveModal(feature ? `learning-tools:${feature}` : 'learning-tools')
+  }
+
+  const handleLearningActivity = () => {
+    setLearningActivityVersion((value) => value + 1)
+  }
+
+  const handleQuizComplete = async (result) => {
+    if (user?.role === 'student') {
+      try {
+        await saveQuizResult({
+          userId: user.id || user.uid,
+          userName: user.name || user.displayName || 'Siswa',
+          userEmail: user.email || '',
+          classCode: user.classCode || null,
+          moduleId: result.moduleId,
+          moduleTitle: result.moduleTitle,
+          attemptType: result.attemptType || 'evaluation',
+          questionVersion: result.questionVersion || 'v1.0',
+          score: result.score,
+          totalQuestions: result.total,
+          answers: result.answers || {},
+        })
+      } catch (err) {
+        console.warn('Gagal sinkronisasi kuis ke database:', err)
+      }
+    }
+    if (user?.role !== 'guest') {
+      recordLearningActivity(user.id, {
+        type: 'quiz',
+        title: 'Menyelesaikan kuis',
+        detail: `${result.moduleTitle}: ${result.score}/${result.total} jawaban benar.`,
+      }, handleLearningActivity)
+    }
+  }
+
+  const handleOpenJournal = () => {
+    handleOpenLearningFeatures('digital-journal')
   }
 
   const handleSelectModule = (modId) => {
@@ -114,47 +128,12 @@ export default function Home() {
   const handleStartQuiz = (moduleId = null) => {
     setQuizModuleId(moduleId)
     setActiveModal('quiz-page')
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('electrofun_modal_closed')
-      }
-    } catch {}
   }
 
   const closeModal = () => {
     setActiveModal(null)
     setQuizModuleId(null)
-    try {
-      localStorage.removeItem('electrofun_active_modal')
-      localStorage.removeItem('electrofun_quiz_module_id')
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('electrofun_modal_closed', 'true')
-      }
-    } catch {}
   }
-
-  useEffect(() => {
-    try {
-      if (activeModal) {
-        localStorage.setItem('electrofun_active_modal', activeModal)
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.removeItem('electrofun_modal_closed')
-        }
-      } else {
-        localStorage.removeItem('electrofun_active_modal')
-      }
-    } catch {}
-  }, [activeModal])
-
-  useEffect(() => {
-    try {
-      if (quizModuleId) {
-        localStorage.setItem('electrofun_quiz_module_id', quizModuleId)
-      } else {
-        localStorage.removeItem('electrofun_quiz_module_id')
-      }
-    } catch {}
-  }, [quizModuleId])
 
   // Close modal on Escape key
   useEffect(() => {
@@ -172,6 +151,7 @@ export default function Home() {
         activeNav={activeNav}
         onNavigate={handleNavigate}
         onStartLearning={handleStartLearning}
+        onOpenLearningFeatures={() => handleOpenLearningFeatures()}
       />
 
       {/* 2. Hero Section */}
@@ -256,6 +236,9 @@ export default function Home() {
 
       {/* 3. Three Topic Module Cards */}
       <TopicCards onSelectModule={handleSelectModule} />
+      <div className="container">
+        <ExpandedCourse userId={user?.id || user?.email || 'anonymous'} onActivity={handleLearningActivity} />
+      </div>
 
       {/* Educational Concept Guide & Misconception Matrix */}
       <section className="container" style={{ marginBottom: '4rem' }} aria-labelledby="matrix-title">
@@ -359,6 +342,7 @@ export default function Home() {
           onComplete={handleToggleModuleProgress}
           onSelectModule={handleSelectModule}
           onStartQuiz={handleStartQuiz}
+          onOpenVirtualLab={handleOpenLab}
         />
       )}
       {activeModal === 'quiz-page' && (
@@ -367,11 +351,22 @@ export default function Home() {
           moduleId={quizModuleId}
           onSelectModule={setQuizModuleId}
           onClose={closeModal}
+          onComplete={handleQuizComplete}
+        />
+      )}
+      {activeModal === 'virtual-lab' && <VirtualLab user={user} onClose={closeModal} onOpenJournal={handleOpenJournal} />}
+      {(activeModal === 'learning-tools' || activeModal?.startsWith('learning-tools:')) && (
+        <LearningFeatureHub
+          user={user}
+          onClose={closeModal}
+          onActivity={handleLearningActivity}
+          initialFeature={activeModal.includes(':') ? activeModal.split(':')[1] : ''}
+          activityVersion={learningActivityVersion}
         />
       )}
 
       {/* Legacy quick preview */}
-      {activeModal && !activeModal.startsWith('module-page:') && activeModal !== 'quiz-page' && (
+      {activeModal && !activeModal.startsWith('module-page:') && !activeModal.startsWith('learning-tools') && activeModal !== 'quiz-page' && activeModal !== 'virtual-lab' && (
         <div
           className="modal-backdrop"
           onClick={closeModal}
@@ -551,7 +546,7 @@ export default function Home() {
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={() => handleStartQuiz('modul-3')}
+                    onClick={() => setActiveModal('kuis')}
                   >
                     Uji Pemahaman di Kuis →
                   </button>
@@ -565,6 +560,7 @@ export default function Home() {
                 moduleId={quizModuleId}
                 onSelectModule={setQuizModuleId}
                 onClose={closeModal}
+                onComplete={handleQuizComplete}
               />
             )}
           </div>
@@ -601,6 +597,7 @@ export default function Home() {
                 <li><a href="#laboratorium" onClick={(e) => { e.preventDefault(); handleNavigate('laboratorium'); }}>Laboratorium Mini (Modul 2)</a></li>
                 <li><a href="#materi" onClick={(e) => { e.preventDefault(); handleSelectModule('modul-3'); }}>Jelajahi Ion (Modul 3)</a></li>
                 <li><a href="#kuis" onClick={(e) => { e.preventDefault(); handleStartQuiz(); }}>Kuis Evaluasi</a></li>
+                <li><a href="#panduan" onClick={(e) => { e.preventDefault(); document.getElementById('btn-panduan')?.click(); }}>Panduan Penggunaan</a></li>
               </ul>
             </div>
 
