@@ -32,3 +32,30 @@
 - Menjalankan static analysis `npm run lint` (`oxlint`). Status: **0 errors, 0 warnings**.
 - Menjalankan bundler produksi `npm run build` (`vite build`). Status: **Success (516ms)**.
 
+---
+
+## 5. Implementasi Fitur "Mode Bandingkan Dua Larutan" (18 November 2026)
+- **Cabang Git:** `fitur-mode-bandingkan`
+- **File Baru:**
+  - `src/components/DualSolutionCompare.jsx`
+  - `src/components/DualSolutionCompare.css`
+- **Modifikasi Minimal pada File Lama (`src/components/VirtualLab.jsx`):**
+  - Import komponen `DualSolutionCompare` di baris atas.
+  - Penambahan tombol tab `Mode Bandingkan Dua Larutan` pada `<nav className="lab-tabs">`.
+  - Pemanggilan inisialisasi kondisional `{activeTab === 'dual-compare' && <DualSolutionCompare ... />}`.
+- **Rincian Fitur yang Diimplementasikan:**
+  - Dua beker berdampingan dan dua lampu indikator dengan visualisasi SVG presisi, elektrode (+/−), gelembung gas, dan pergerakan partikel kation/anion/netral.
+  - Hasil sensor dua kolom berdampingan; menampilkan *"Belum ada pengukuran"* sebelum rangkaian dihubungkan (bukan angka 0).
+  - Penghitungan rasio daya hantar otomatis (misal: *"Larutan A menghantar ± X kali lebih baik daripada B"*) dan penanganan nilai 0 (misal: *"Larutan B tidak menghantar listrik"*, bebas dari nilai tak hingga / Infinity).
+  - Umpan balik edukatif otomatis setelah rangkaian aktif: menjelaskan pengaruh jumlah ion bebas (derajat ionisasi $\alpha$) pada konsentrasi yang sama, serta perilaku nonelektrolit dan valensi ion.
+  - Kartu pemantik *"Coba ini"* dengan pertanyaan kontekstual dan tombol toggle *"Lihat penjelasan"*.
+  - Preset pasangan zat edukatif yang HANYA menggunakan zat resmi dari `laboratorySolutions` (NaCl vs CH₃COOH, NaCl vs Sukrosa, CH₃COOH vs Glukosa, HCl vs NH₃, Air Suling vs Air Mineral, NaCl vs CaCl₂).
+  - Tiga level representasi kimia (Makroskopik, Submikroskopik, Simbolik).
+  - Tombol *"Catat perbandingan"* yang menyimpan data komparatif ke `localStorage` dengan key berawalan `compare_` (`compare_records`), disertai tabel riwayat perbandingan.
+- **Hasil Pengujian & Verifikasi:**
+  - `npm run build`: **Berhasil (897ms, 63 modul)** tanpa error bundle.
+  - `oxlint`: 0 error pada file baru.
+  - Uji Regresi: Tab *"Meja eksperimen"* dan *"LKPD & data"* berfungsi normal dengan NaCl 0,10 M.
+  - `tests/systemTest.js`: Seluruh 20 skenario pengujian RBAC, kuis, dan data siswa tetap **100% PASS**.
+
+

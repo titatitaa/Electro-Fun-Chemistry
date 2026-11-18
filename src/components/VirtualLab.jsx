@@ -10,6 +10,7 @@ import {
   voltageChoices,
 } from '../data/labModel.js'
 import { getUserLabLogKey, getUserLabNotesKey } from '../data/learningStore.js'
+import DualSolutionCompare from './DualSolutionCompare.jsx'
 import './VirtualLab.css'
 
 const categoryLabels = { kuat: 'Elektrolit kuat', lemah: 'Elektrolit lemah', none: 'Nonelektrolit', air: 'Sampel air' }
@@ -509,6 +510,7 @@ export default function VirtualLab({ onClose, onOpenJournal, user }) {
 
         <nav className="lab-tabs" aria-label="Bagian laboratorium">
           <button type="button" className={activeTab === 'experiment' ? 'active' : ''} onClick={() => setActiveTab('experiment')}>Meja eksperimen</button>
+          <button type="button" className={activeTab === 'dual-compare' ? 'active' : ''} onClick={() => setActiveTab('dual-compare')}>Mode Bandingkan Dua Larutan</button>
           <button type="button" className={activeTab === 'compare' ? 'active' : ''} onClick={() => setActiveTab('compare')}>Bandingkan larutan</button>
           <button type="button" className={activeTab === 'worksheet' ? 'active' : ''} onClick={() => setActiveTab('worksheet')}>LKPD &amp; data ({observations.length})</button>
         </nav>
@@ -676,6 +678,9 @@ export default function VirtualLab({ onClose, onOpenJournal, user }) {
           </>
         )}
 
+        {activeTab === 'dual-compare' && (
+          <DualSolutionCompare user={user} onOpenJournal={onOpenJournal} />
+        )}
         {activeTab === 'compare' && (
           <LabComparison settings={{ concentration: actualConcentration, volume, temperature, voltage, distance, dissolved: true }} />
         )}
