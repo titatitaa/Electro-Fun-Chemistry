@@ -71,11 +71,23 @@ const COMPARISON_PRESETS = [
 
 const STORAGE_KEY = 'compare_records'
 
+// Slot posisi partikel terpisah di dalam cairan beker (mencegah saling tumpuk)
+const PARTICLE_SLOTS = [
+  { x: 145, y: 185 },
+  { x: 180, y: 178 },
+  { x: 215, y: 185 },
+  { x: 155, y: 210 },
+  { x: 200, y: 210 },
+  { x: 140, y: 238 },
+  { x: 180, y: 235 },
+  { x: 215, y: 240 },
+]
+
 function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbColor }) {
   const lampLevel = result.lampLevel || 0
   const isDissolved = true
   const volume = 100
-  const fillHeight = 50
+  const cleanId = label.toLowerCase().replace(/[^a-z0-9]/g, '')
 
   return (
     <div className="dual-beaker-box">
@@ -90,12 +102,8 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbCo
         aria-label={`Rangkaian uji daya hantar ${label} untuk larutan ${solution.name}`}
       >
         <defs>
-          <linearGradient id={`liquidGrad-${label}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#c8ebde" stopOpacity="0.85" />
-            <stop offset="100%" stopColor="#82cfb0" stopOpacity="0.9" />
-          </linearGradient>
-          <filter id={`bulbGlow-${label}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={lampLevel * 3} result="blur" />
+          <filter id={`bulbGlow-${cleanId}`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation={lampLevel * 3.5} result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -103,15 +111,19 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbCo
           </filter>
         </defs>
 
-        {/* Kawat Rangkaian */}
-        <path d="M 50 60 L 50 30 L 160 30 L 160 50" fill="none" stroke="#71877a" strokeWidth="4" strokeLinecap="round" />
-        <path d="M 200 50 L 200 30 L 310 30 L 310 60" fill="none" stroke="#71877a" strokeWidth="4" strokeLinecap="round" />
-        <path d="M 50 60 L 120 60 L 120 140" fill="none" stroke="#71877a" strokeWidth="4" strokeLinecap="round" />
-        <path d="M 310 60 L 240 60 L 240 140" fill="none" stroke="#71877a" strokeWidth="4" strokeLinecap="round" />
+        {/* Kawat Rangkaian (Jalur rapi tidak menimpa label elektrode) */}
+        <path
+          d="M 40 50 L 173 50 M 187 50 L 320 50 M 40 50 L 40 110 L 115 110 M 320 50 L 320 110 L 245 110"
+          fill="none"
+          stroke="#64748b"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+        />
 
+        {/* Animasi Arus Listrik saat Menyala */}
         {isPowered && lampLevel > 0 && (
           <path
-            d="M 50 30 L 160 30 M 200 30 L 310 30"
+            d="M 40 50 L 173 50 M 187 50 L 320 50 M 40 50 L 40 110 L 115 110 M 320 50 L 320 110 L 245 110"
             fill="none"
             stroke="#f59e0b"
             strokeWidth="3"
@@ -120,52 +132,143 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbCo
           />
         )}
 
-        {/* Lampu Indikator */}
-        <g transform="translate(160, 20)" filter={isPowered && lampLevel > 0 ? `url(#bulbGlow-${label})` : undefined}>
-          <circle cx="20" cy="20" r="16" fill={isPowered && lampLevel > 0 ? bulbColor : '#f1f5f9'} stroke="#64748b" strokeWidth="3" />
-          <rect x="15" y="36" width="10" height="7" fill="#94a3b8" rx="2" />
-          <path d="M 16 18 Q 20 12 24 18" fill="none" stroke={isPowered && lampLevel > 0 ? '#ffffff' : '#64748b'} strokeWidth="2" />
-        </g>
-        <text x="180" y="70" textAnchor="middle" fontSize="11" fontWeight="700" fill="#475569">
-          {isPowered ? (lampLevel === 0 ? 'Padam' : lampLevel === 1 ? 'Sangat Redup' : lampLevel === 2 ? 'Redup' : 'Terang') : 'Lampu (OFF)'}
-        </text>
+        {/* Lampu Pijar Klasik (Bola kaca, filamen, soket ulir) */}
+        <g transform="translate(0, 0)">
+          {/* Pendaran Cahaya saat Menyala */}
+          {isPowered && lampLevel > 0 && (
+            <g stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" opacity="0.85">
+              <line x1="180" y1="2" x2="180" y2="-6" />
+              <line x1="152" y1="10" x2="145" y2="5" />
+              <line x1="208" y1="10" x2="215" y2="5" />
+              <line x1="144" y1="24" x2="136" y2="24" />
+              <line x1="216" y1="24" x2="224" y2="24" />
+            </g>
+          )}
 
-        {/* Gelas Beker */}
+          {/* Bola Kaca Lampu */}
+          <path
+            d="M 173 46 C 163 40 158 31 158 20 A 22 22 0 1 1 202 20 C 202 31 197 40 187 46 Z"
+            fill={isPowered && lampLevel > 0 ? bulbColor : '#f1f5f9'}
+            stroke={isPowered && lampLevel > 0 ? '#eab308' : '#94a3b8'}
+            strokeWidth="2.5"
+            filter={isPowered && lampLevel > 0 ? `url(#bulbGlow-${cleanId})` : undefined}
+          />
+
+          {/* Kawat Penyangga Filamen di dalam Bola Lampu */}
+          <line
+            x1="175"
+            y1="46"
+            x2="175"
+            y2="25"
+            stroke={isPowered && lampLevel > 0 ? '#d97706' : '#64748b'}
+            strokeWidth="1.5"
+          />
+          <line
+            x1="185"
+            y1="46"
+            x2="185"
+            y2="25"
+            stroke={isPowered && lampLevel > 0 ? '#d97706' : '#64748b'}
+            strokeWidth="1.5"
+          />
+
+          {/* Filamen Tungsten (Menyala Terang jika Arus Mengalir) */}
+          <path
+            d="M 175 25 Q 180 17 185 25"
+            fill="none"
+            stroke={isPowered && lampLevel > 0 ? '#ffffff' : '#64748b'}
+            strokeWidth={isPowered && lampLevel > 0 ? '2.8' : '1.5'}
+            strokeLinecap="round"
+          />
+
+          {/* Soket Ulir Logam Lampu */}
+          <rect x="173" y="46" width="14" height="10" rx="1" fill="#94a3b8" stroke="#475569" strokeWidth="1.5" />
+          <line x1="173" y1="49" x2="187" y2="49" stroke="#64748b" strokeWidth="1" />
+          <line x1="173" y1="52" x2="187" y2="52" stroke="#64748b" strokeWidth="1" />
+          <ellipse cx="180" cy="57" rx="4" ry="2" fill="#334155" />
+
+          {/* Label Status Nyala Lampu */}
+          <text x="180" y="74" textAnchor="middle" fontSize="11" fontWeight="700" fill="#334155">
+            {isPowered
+              ? lampLevel === 0
+                ? 'Lampu: Padam'
+                : lampLevel === 1
+                ? 'Lampu: Sangat Redup'
+                : lampLevel === 2
+                ? 'Lampu: Redup'
+                : 'Lampu: Terang'
+              : 'Lampu: OFF'}
+          </text>
+        </g>
+
+        {/* Gelas Beker & Cairan */}
         <g transform="translate(0, 30)">
-          {/* Garis Dinding Beker */}
-          <path d="M 80 120 L 95 260 Q 98 270 110 270 L 250 270 Q 262 270 265 260 L 280 120" fill="rgba(255,255,255,0.6)" stroke="#64748b" strokeWidth="3.5" />
-          {/* Cairan Larutan */}
+          {/* Garis Dinding Kaca Beker Transparan */}
+          <path
+            d="M 80 115 L 95 260 Q 98 270 110 270 L 250 270 Q 262 270 265 260 L 280 115"
+            fill="rgba(255,255,255,0.7)"
+            stroke="#64748b"
+            strokeWidth="3.5"
+          />
+
+          {/* Cairan Bening Biru Muda Transparan (Bebas dari warna hitam) */}
           {isDissolved && (
-            <path
-              d={`M 88 ${265 - fillHeight * 1.8} L 96 260 Q 98 268 110 268 L 250 268 Q 262 268 264 260 L 272 ${265 - fillHeight * 1.8} Z`}
-              fill={`url(#liquidGrad-${label})`}
-            />
+            <>
+              <path
+                d="M 87 170 L 96 260 Q 98 268 110 268 L 250 268 Q 262 268 264 260 L 273 170 Z"
+                fill="rgba(147, 197, 253, 0.35)"
+              />
+              {/* Garis Permukaan Meniskus Cairan */}
+              <path
+                d="M 87 170 L 273 170"
+                stroke="rgba(96, 165, 250, 0.75)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </>
           )}
 
           {/* Batang Elektroda Anode & Katode */}
-          <rect x="115" y="100" width="12" height="130" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
-          <rect x="233" y="100" width="12" height="130" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
-          <text x="121" y="93" textAnchor="middle" fontSize="10" fontWeight="700" fill="#92400e">(+)</text>
-          <text x="239" y="93" textAnchor="middle" fontSize="10" fontWeight="700" fill="#92400e">(−)</text>
+          <rect x="115" y="90" width="12" height="145" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
+          <rect x="233" y="90" width="12" height="145" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
 
-          {/* Partikel Submikroskopik dalam larutan */}
-          {particles.slice(0, 14).map((particle) => (
-            <g
-              key={particle.id}
-              className={`compare-particle ${particle.type}${isPowered ? ' moving' : ''}`}
-              transform={`translate(${105 + (particle.x % 140)}, ${185 + (particle.y % 65)})`}
-            >
-              <circle r={particle.type === 'neutral' ? 10 : 11} />
-              <text y="3" textAnchor="middle" fontSize="8" fontWeight="700">
-                {particle.formula}
-              </text>
-            </g>
-          ))}
+          {/* Badge Label Polaritas (+) dan (−) di Atas Batang dengan Latar Putih (Bebas tertimpa kabel) */}
+          <g transform="translate(108, 66)">
+            <rect width="26" height="18" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
+            <text x="13" y="13" textAnchor="middle" fontSize="11" fontWeight="800" fill="#92400e">
+              (+)
+            </text>
+          </g>
+
+          <g transform="translate(226, 66)">
+            <rect width="26" height="18" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
+            <text x="13" y="13" textAnchor="middle" fontSize="11" fontWeight="800" fill="#92400e">
+              (−)
+            </text>
+          </g>
+
+          {/* Partikel Tersebar Rapi Berdasarkan Slot (Tanpa Menumpuk) */}
+          {particles.slice(0, 8).map((particle, idx) => {
+            const slot = PARTICLE_SLOTS[idx % PARTICLE_SLOTS.length]
+            return (
+              <g
+                key={particle.id}
+                className={`compare-particle ${particle.type}${isPowered ? ' moving' : ''}`}
+                transform={`translate(${slot.x}, ${slot.y})`}
+              >
+                <circle r={particle.type === 'neutral' ? 9.5 : 10} />
+                <text y="3" textAnchor="middle" fontSize="7.5" fontWeight="800">
+                  {particle.formula}
+                </text>
+              </g>
+            )
+          })}
 
           {/* Gelembung Gas di sekitar elektrode jika menyala */}
           {isPowered && lampLevel > 0 && Array.from({ length: Math.min(lampLevel * 2, 6) }, (_, idx) => (
             <circle
-              key={`bubble-${label}-${idx}`}
+              key={`bubble-${cleanId}-${idx}`}
               className="compare-bubble"
               cx={idx % 2 === 0 ? 121 + (idx * 2) : 239 - (idx * 2)}
               cy={215 - (idx * 16)}
@@ -175,7 +278,7 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbCo
             />
           ))}
 
-          <text x="180" y="285" textAnchor="middle" fontSize="11" fontWeight="600" fill="#334155">
+          <text x="180" y="286" textAnchor="middle" fontSize="11" fontWeight="700" fill="#334155">
             {solution.formula} ({volume} mL)
           </text>
         </g>
