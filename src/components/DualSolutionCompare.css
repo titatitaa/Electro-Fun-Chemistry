@@ -306,14 +306,38 @@
   pointer-events: none;
 }
 
-.compare-particle.moving {
-  animation: floatParticle 3s infinite alternate ease-in-out;
+/* Arah gerak ion akurat secara elektrokimia: */
+/* Anion (−) bermigrasi ke kiri menuju Anode (+) */
+.compare-particle.anion.moving {
+  animation: migrateToAnode 3s infinite alternate ease-in-out;
 }
 
-@keyframes floatParticle {
-  0% { transform: translateY(0) translateX(0); }
-  50% { transform: translateY(-5px) translateX(3px); }
-  100% { transform: translateY(4px) translateX(-4px); }
+/* Kation (+) bermigrasi ke kanan menuju Katode (−) */
+.compare-particle.cation.moving {
+  animation: migrateToKatode 3s infinite alternate ease-in-out;
+}
+
+/* Molekul netral melayang perlahan di tempat (tanpa tarikan elektrostatik) */
+.compare-particle.neutral.moving {
+  animation: driftNeutral 3.5s infinite alternate ease-in-out;
+}
+
+@keyframes migrateToAnode {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-6px, -2px); }
+  100% { transform: translate(-12px, 1px); }
+}
+
+@keyframes migrateToKatode {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(6px, -2px); }
+  100% { transform: translate(12px, 1px); }
+}
+
+@keyframes driftNeutral {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(2px, -3px); }
+  100% { transform: translate(-2px, 3px); }
 }
 
 .compare-bubble {
@@ -349,9 +373,23 @@
   padding: 0.85rem 1.25rem;
   border-radius: var(--radius-lg, 12px);
   display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.dual-ratio-content {
+  display: flex;
   align-items: center;
   gap: 0.65rem;
-  font-size: 0.95rem;
+  flex-wrap: wrap;
+}
+
+.dual-ratio-note {
+  font-size: 0.8rem;
+  color: #15803d;
+  font-style: italic;
+  margin-left: 2rem;
 }
 
 .dual-feedback-box {

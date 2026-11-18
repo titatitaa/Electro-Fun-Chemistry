@@ -71,23 +71,37 @@ const COMPARISON_PRESETS = [
 
 const STORAGE_KEY = 'compare_records'
 
-// Slot posisi partikel terpisah di dalam cairan beker (mencegah saling tumpuk)
+// Warna kecerahan bola lampu konsisten dengan ambang lampLevel labModel.js
+const BULB_COLORS = ['#94a3b8', '#fef08a', '#facc15', '#f59e0b']
+
+// Slot posisi partikel terpisah di dalam batas cairan beker
 const PARTICLE_SLOTS = [
-  { x: 145, y: 185 },
-  { x: 180, y: 178 },
-  { x: 215, y: 185 },
-  { x: 155, y: 210 },
-  { x: 200, y: 210 },
-  { x: 140, y: 238 },
-  { x: 180, y: 235 },
-  { x: 215, y: 240 },
+  { x: 148, y: 190 },
+  { x: 180, y: 182 },
+  { x: 212, y: 190 },
+  { x: 158, y: 214 },
+  { x: 202, y: 214 },
+  { x: 148, y: 238 },
+  { x: 180, y: 236 },
+  { x: 212, y: 240 },
 ]
 
-function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbColor }) {
+function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
   const lampLevel = result.lampLevel || 0
   const isDissolved = true
   const volume = 100
   const cleanId = label.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const bulbColor = BULB_COLORS[lampLevel] || '#94a3b8'
+
+  const lampStatusText = !isPowered
+    ? 'Lampu: OFF'
+    : lampLevel === 0
+    ? 'Lampu: Padam'
+    : lampLevel === 1
+    ? 'Lampu: Sangat redup'
+    : lampLevel === 2
+    ? 'Lampu: Redup'
+    : 'Lampu: Terang'
 
   return (
     <div className="dual-beaker-box">
@@ -187,17 +201,9 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbCo
           <line x1="173" y1="52" x2="187" y2="52" stroke="#64748b" strokeWidth="1" />
           <ellipse cx="180" cy="57" rx="4" ry="2" fill="#334155" />
 
-          {/* Label Status Nyala Lampu */}
+          {/* Label Status Nyala Lampu Konsisten dengan labModel.js */}
           <text x="180" y="74" textAnchor="middle" fontSize="11" fontWeight="700" fill="#334155">
-            {isPowered
-              ? lampLevel === 0
-                ? 'Lampu: Padam'
-                : lampLevel === 1
-                ? 'Lampu: Sangat Redup'
-                : lampLevel === 2
-                ? 'Lampu: Redup'
-                : 'Lampu: Terang'
-              : 'Lampu: OFF'}
+            {lampStatusText}
           </text>
         </g>
 
@@ -233,34 +239,32 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label, bulbCo
           <rect x="115" y="90" width="12" height="145" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
           <rect x="233" y="90" width="12" height="145" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
 
-          {/* Badge Label Polaritas (+) dan (−) di Atas Batang dengan Latar Putih (Bebas tertimpa kabel) */}
-          <g transform="translate(108, 66)">
-            <rect width="26" height="18" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
-            <text x="13" y="13" textAnchor="middle" fontSize="11" fontWeight="800" fill="#92400e">
-              (+)
+          {/* Badge Label Polaritas Anode (+) dan Katode (−) Konsisten dengan VirtualLab.jsx */}
+          <g transform="translate(98, 64)">
+            <rect width="46" height="20" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
+            <text x="23" y="14" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#92400e">
+              Anode (+)
             </text>
           </g>
 
-          <g transform="translate(226, 66)">
-            <rect width="26" height="18" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
-            <text x="13" y="13" textAnchor="middle" fontSize="11" fontWeight="800" fill="#92400e">
-              (−)
+          <g transform="translate(216, 64)">
+            <rect width="46" height="20" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
+            <text x="23" y="14" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#92400e">
+              Katode (−)
             </text>
           </g>
 
-          {/* Partikel Tersebar Rapi Berdasarkan Slot (Tanpa Menumpuk) */}
+          {/* Partikel Tersebar di Dalam Batas Cairan Beker (Clamp aman, tidak keluar beker) */}
           {particles.slice(0, 8).map((particle, idx) => {
             const slot = PARTICLE_SLOTS[idx % PARTICLE_SLOTS.length]
             return (
-              <g
-                key={particle.id}
-                className={`compare-particle ${particle.type}${isPowered ? ' moving' : ''}`}
-                transform={`translate(${slot.x}, ${slot.y})`}
-              >
-                <circle r={particle.type === 'neutral' ? 9.5 : 10} />
-                <text y="3" textAnchor="middle" fontSize="7.5" fontWeight="800">
-                  {particle.formula}
-                </text>
+              <g key={particle.id} transform={`translate(${slot.x}, ${slot.y})`}>
+                <g className={`compare-particle ${particle.type}${isPowered ? ' moving' : ''}`}>
+                  <circle r={particle.type === 'neutral' ? 9.5 : 10} />
+                  <text y="3" textAnchor="middle" fontSize="7.5" fontWeight="800">
+                    {particle.formula}
+                  </text>
+                </g>
               </g>
             )
           })}
@@ -359,8 +363,6 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
 
   const particlesA = useMemo(() => createParticles(resultA, solutionA), [resultA, solutionA])
   const particlesB = useMemo(() => createParticles(resultB, solutionB), [resultB, solutionB])
-
-  const bulbColors = ['#94a3b8', '#fef08a', '#facc15', '#f59e0b']
 
   // Pilih preset
   const handleSelectPreset = (presetId) => {
@@ -688,7 +690,6 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
           result={resultA}
           particles={particlesA}
           isPowered={isPowered}
-          bulbColor={bulbColors[resultA.lampLevel]}
         />
         <SingleBeakerSVG
           label="Larutan B"
@@ -696,7 +697,6 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
           result={resultB}
           particles={particlesB}
           isPowered={isPowered}
-          bulbColor={bulbColors[resultB.lampLevel]}
         />
       </div>
 
@@ -705,8 +705,13 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
         <div className="dual-insights-panel">
           {conductivityRatioText && (
             <div className="dual-ratio-badge">
-              <span className="ratio-icon">⚖️</span>
-              <strong>Perbandingan Daya Hantar:</strong> {conductivityRatioText}
+              <div className="dual-ratio-content">
+                <span className="ratio-icon">⚖️</span>
+                <strong>Perbandingan Daya Hantar:</strong> {conductivityRatioText}
+              </div>
+              <small className="dual-ratio-note">
+                Rasio dihitung dari model sederhana, bukan hasil ukur nyata.
+              </small>
             </div>
           )}
 
