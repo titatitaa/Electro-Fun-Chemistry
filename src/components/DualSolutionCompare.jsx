@@ -71,37 +71,53 @@ const COMPARISON_PRESETS = [
 
 const STORAGE_KEY = 'compare_records'
 
-// Warna kecerahan bola lampu konsisten dengan ambang lampLevel labModel.js
-const BULB_COLORS = ['#94a3b8', '#fef08a', '#facc15', '#f59e0b']
-
-// Slot posisi partikel terpisah di dalam batas cairan beker
+// Slot posisi partikel terpisah di dalam batas cairan beker (jarak aman anti-tumpuk)
 const PARTICLE_SLOTS = [
-  { x: 148, y: 190 },
-  { x: 180, y: 182 },
-  { x: 212, y: 190 },
-  { x: 158, y: 214 },
-  { x: 202, y: 214 },
-  { x: 148, y: 238 },
-  { x: 180, y: 236 },
-  { x: 212, y: 240 },
+  { x: 150, y: 188 },
+  { x: 180, y: 180 },
+  { x: 210, y: 188 },
+  { x: 165, y: 212 },
+  { x: 195, y: 212 },
+  { x: 150, y: 238 },
+  { x: 210, y: 238 },
 ]
+
+// Filter partikel yang digambar (edukatif, tidak berskala nyata, agar tidak saling menimpa)
+function getDisplayParticles(solution, particles) {
+  if (solution.category === 'lemah') {
+    // Untuk elektrolit lemah: 1 pasang ion (1 kation + 1 anion) + sekitar 5 molekul netral
+    const cation = particles.find((p) => p.type === 'cation')
+    const anion = particles.find((p) => p.type === 'anion')
+    const neutrals = particles.filter((p) => p.type === 'neutral').slice(0, 5)
+    const list = []
+    if (cation) list.push({ ...cation, id: `${cation.id}-cat` })
+    if (anion) list.push({ ...anion, id: `${anion.id}-ani` })
+    neutrals.forEach((n, idx) => list.push({ ...n, id: `${n.id}-neu-${idx}` }))
+    return list.slice(0, 7)
+  }
+  return particles.slice(0, 7)
+}
 
 function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
   const lampLevel = result.lampLevel || 0
   const isDissolved = true
   const volume = 100
   const cleanId = label.toLowerCase().replace(/[^a-z0-9]/g, '')
-  const bulbColor = BULB_COLORS[lampLevel] || '#94a3b8'
 
+  // Satu sumber kebenaran status lampu (Padam / Redup / Terang)
+  // lampLevel 0: Padam
+  // lampLevel 1, 2: Redup (misal CaCl2 0.10M pada 1.5V bernilai lampLevel 2 -> Redup, kuning pucat sinar kecil)
+  // lampLevel >= 3: Terang (kuning penuh sinar besar)
+  const lampStatus = !isPowered || lampLevel === 0 ? 'padam' : lampLevel >= 3 ? 'terang' : 'redup'
   const lampStatusText = !isPowered
     ? 'Lampu: OFF'
-    : lampLevel === 0
+    : lampStatus === 'padam'
     ? 'Lampu: Padam'
-    : lampLevel === 1
-    ? 'Lampu: Sangat redup'
-    : lampLevel === 2
-    ? 'Lampu: Redup'
-    : 'Lampu: Terang'
+    : lampStatus === 'terang'
+    ? 'Lampu: Terang'
+    : 'Lampu: Redup'
+
+  const displayParticles = getDisplayParticles(solution, particles)
 
   return (
     <div className="dual-beaker-box">
@@ -111,13 +127,13 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
 
       <svg
         className={`dual-svg-canvas${isPowered ? ' is-powered' : ''}`}
-        viewBox="0 0 360 320"
+        viewBox="0 0 360 330"
         role="img"
         aria-label={`Rangkaian uji daya hantar ${label} untuk larutan ${solution.name}`}
       >
         <defs>
           <filter id={`bulbGlow-${cleanId}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={lampLevel * 3.5} result="blur" />
+            <feGaussianBlur stdDeviation={lampStatus === 'terang' ? 8 : 3} result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -135,7 +151,7 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
         />
 
         {/* Animasi Arus Listrik saat Menyala */}
-        {isPowered && lampLevel > 0 && (
+        {lampStatus !== 'padam' && (
           <path
             d="M 40 50 L 173 50 M 187 50 L 320 50 M 40 50 L 40 110 L 115 110 M 320 50 L 320 110 L 245 110"
             fill="none"
@@ -146,26 +162,37 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
           />
         )}
 
-        {/* Lampu Pijar Klasik (Bola kaca, filamen, soket ulir) */}
+        {/* Lampu Pijar Klasik (Satu sumber kebenaran visual sesuai Padam / Redup / Terang) */}
         <g transform="translate(0, 0)">
-          {/* Pendaran Cahaya saat Menyala */}
-          {isPowered && lampLevel > 0 && (
-            <g stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" opacity="0.85">
-              <line x1="180" y1="2" x2="180" y2="-6" />
-              <line x1="152" y1="10" x2="145" y2="5" />
-              <line x1="208" y1="10" x2="215" y2="5" />
-              <line x1="144" y1="24" x2="136" y2="24" />
-              <line x1="216" y1="24" x2="224" y2="24" />
+          {/* Sinar Lampu Terang (Kuning penuh dengan sinar besar) */}
+          {lampStatus === 'terang' && (
+            <g stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" opacity="0.9">
+              <line x1="180" y1="2" x2="180" y2="-8" />
+              <line x1="152" y1="10" x2="142" y2="3" />
+              <line x1="208" y1="10" x2="218" y2="3" />
+              <line x1="144" y1="24" x2="134" y2="24" />
+              <line x1="216" y1="24" x2="226" y2="24" />
             </g>
           )}
 
-          {/* Bola Kaca Lampu */}
+          {/* Sinar Lampu Redup (Kuning pucat dengan sinar kecil dan opasitas sedang) */}
+          {lampStatus === 'redup' && (
+            <g stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" opacity="0.45">
+              <line x1="180" y1="2" x2="180" y2="-3" />
+              <line x1="152" y1="10" x2="147" y2="6" />
+              <line x1="208" y1="10" x2="213" y2="6" />
+              <line x1="144" y1="24" x2="139" y2="24" />
+              <line x1="216" y1="24" x2="221" y2="24" />
+            </g>
+          )}
+
+          {/* Bola Kaca Lampu: Padam=abu-abu, Redup=kuning pucat, Terang=kuning penuh */}
           <path
             d="M 173 46 C 163 40 158 31 158 20 A 22 22 0 1 1 202 20 C 202 31 197 40 187 46 Z"
-            fill={isPowered && lampLevel > 0 ? bulbColor : '#f1f5f9'}
-            stroke={isPowered && lampLevel > 0 ? '#eab308' : '#94a3b8'}
+            fill={lampStatus === 'terang' ? '#facc15' : lampStatus === 'redup' ? '#fef9c3' : '#f1f5f9'}
+            stroke={lampStatus === 'terang' ? '#ca8a04' : lampStatus === 'redup' ? '#eab308' : '#94a3b8'}
             strokeWidth="2.5"
-            filter={isPowered && lampLevel > 0 ? `url(#bulbGlow-${cleanId})` : undefined}
+            filter={lampStatus !== 'padam' ? `url(#bulbGlow-${cleanId})` : undefined}
           />
 
           {/* Kawat Penyangga Filamen di dalam Bola Lampu */}
@@ -174,7 +201,7 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
             y1="46"
             x2="175"
             y2="25"
-            stroke={isPowered && lampLevel > 0 ? '#d97706' : '#64748b'}
+            stroke={lampStatus !== 'padam' ? '#d97706' : '#64748b'}
             strokeWidth="1.5"
           />
           <line
@@ -182,16 +209,16 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
             y1="46"
             x2="185"
             y2="25"
-            stroke={isPowered && lampLevel > 0 ? '#d97706' : '#64748b'}
+            stroke={lampStatus !== 'padam' ? '#d97706' : '#64748b'}
             strokeWidth="1.5"
           />
 
-          {/* Filamen Tungsten (Menyala Terang jika Arus Mengalir) */}
+          {/* Filamen Tungsten (Menyala sesuai status kecerahan) */}
           <path
             d="M 175 25 Q 180 17 185 25"
             fill="none"
-            stroke={isPowered && lampLevel > 0 ? '#ffffff' : '#64748b'}
-            strokeWidth={isPowered && lampLevel > 0 ? '2.8' : '1.5'}
+            stroke={lampStatus === 'terang' ? '#ffffff' : lampStatus === 'redup' ? '#fde047' : '#64748b'}
+            strokeWidth={lampStatus === 'terang' ? '3' : lampStatus === 'redup' ? '2' : '1.5'}
             strokeLinecap="round"
           />
 
@@ -239,29 +266,29 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
           <rect x="115" y="90" width="12" height="145" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
           <rect x="233" y="90" width="12" height="145" rx="3" fill="#92400e" stroke="#78350f" strokeWidth="1.5" />
 
-          {/* Badge Label Polaritas Anode (+) dan Katode (−) Konsisten dengan VirtualLab.jsx */}
-          <g transform="translate(98, 64)">
-            <rect width="46" height="20" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
-            <text x="23" y="14" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#92400e">
+          {/* Badge Label Polaritas Anode (+) dan Katode (−) Lebar 64px (Pusat & Tidak Terpotong) */}
+          <g transform="translate(89, 64)">
+            <rect width="64" height="20" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
+            <text x="32" y="14" textAnchor="middle" fontSize="9" fontWeight="800" fill="#92400e">
               Anode (+)
             </text>
           </g>
 
-          <g transform="translate(216, 64)">
-            <rect width="46" height="20" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
-            <text x="23" y="14" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#92400e">
+          <g transform="translate(207, 64)">
+            <rect width="64" height="20" rx="4" fill="#ffffff" stroke="#92400e" strokeWidth="1.5" />
+            <text x="32" y="14" textAnchor="middle" fontSize="9" fontWeight="800" fill="#92400e">
               Katode (−)
             </text>
           </g>
 
-          {/* Partikel Tersebar di Dalam Batas Cairan Beker (Clamp aman, tidak keluar beker) */}
-          {particles.slice(0, 8).map((particle, idx) => {
+          {/* Partikel Tersebar di Dalam Batas Cairan Beker (Jarak aman, font terbaca, tidak menumpuk) */}
+          {displayParticles.map((particle, idx) => {
             const slot = PARTICLE_SLOTS[idx % PARTICLE_SLOTS.length]
             return (
               <g key={particle.id} transform={`translate(${slot.x}, ${slot.y})`}>
                 <g className={`compare-particle ${particle.type}${isPowered ? ' moving' : ''}`}>
-                  <circle r={particle.type === 'neutral' ? 9.5 : 10} />
-                  <text y="3" textAnchor="middle" fontSize="7.5" fontWeight="800">
+                  <circle r={9.5} />
+                  <text y="2.5" textAnchor="middle" fontSize="6.5" fontWeight="800">
                     {particle.formula}
                   </text>
                 </g>
@@ -282,8 +309,12 @@ function SingleBeakerSVG({ solution, result, particles, isPowered, label }) {
             />
           ))}
 
-          <text x="180" y="286" textAnchor="middle" fontSize="11" fontWeight="700" fill="#334155">
+          {/* Keterangan Larutan & Catatan Tidak Berskala */}
+          <text x="180" y="284" textAnchor="middle" fontSize="11" fontWeight="700" fill="#334155">
             {solution.formula} ({volume} mL)
+          </text>
+          <text x="180" y="297" textAnchor="middle" fontSize="8" fill="#64748b" fontStyle="italic">
+            Representasi partikel tidak berskala
           </text>
         </g>
       </svg>
@@ -463,7 +494,7 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
         category: solutionA.category,
         current: formatMeasurement(resultA.current, 4),
         conductivity: formatMeasurement(resultA.conductivity, 4),
-        lamp: ['Padam', 'Sangat redup', 'Redup', 'Terang'][resultA.lampLevel],
+        lamp: !resultA.lampLevel ? 'Padam' : resultA.lampLevel >= 3 ? 'Terang' : 'Redup',
       },
       solB: {
         name: solutionB.name,
@@ -471,7 +502,7 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
         category: solutionB.category,
         current: formatMeasurement(resultB.current, 4),
         conductivity: formatMeasurement(resultB.conductivity, 4),
-        lamp: ['Padam', 'Sangat redup', 'Redup', 'Terang'][resultB.lampLevel],
+        lamp: !resultB.lampLevel ? 'Padam' : resultB.lampLevel >= 3 ? 'Terang' : 'Redup',
       },
       variables: {
         concentration: `${concentration.toFixed(2)} M`,
@@ -750,14 +781,14 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
               <td>Respon Nyala Lampu</td>
               <td>
                 {isPowered ? (
-                  resultA.lampLevel === 0 ? 'Padam' : resultA.lampLevel === 1 ? 'Sangat redup' : resultA.lampLevel === 2 ? 'Redup' : 'Terang'
+                  resultA.lampLevel === 0 ? 'Padam' : resultA.lampLevel >= 3 ? 'Terang' : 'Redup'
                 ) : (
                   <em>Belum ada pengukuran</em>
                 )}
               </td>
               <td>
                 {isPowered ? (
-                  resultB.lampLevel === 0 ? 'Padam' : resultB.lampLevel === 1 ? 'Sangat redup' : resultB.lampLevel === 2 ? 'Redup' : 'Terang'
+                  resultB.lampLevel === 0 ? 'Padam' : resultB.lampLevel >= 3 ? 'Terang' : 'Redup'
                 ) : (
                   <em>Belum ada pengukuran</em>
                 )}
@@ -850,7 +881,7 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
               <div className="rep-col">
                 <h4>Pengamatan Makroskopik: {solutionA.name}</h4>
                 <p>
-                  <strong>Lampu:</strong> {isPowered ? (resultA.lampLevel === 0 ? 'Padam sama sekali' : resultA.lampLevel === 1 ? 'Menyala sangat redup' : resultA.lampLevel === 2 ? 'Menyala redup' : 'Menyala terang benderang') : 'Rangkaian belum dihubungkan.'}
+                  <strong>Lampu:</strong> {isPowered ? (resultA.lampLevel === 0 ? 'Padam' : resultA.lampLevel >= 3 ? 'Menyala terang (kuning penuh)' : 'Menyala redup (kuning pucat)') : 'Rangkaian belum dihubungkan.'}
                 </p>
                 <p>
                   <strong>Gelembung Gas:</strong> {isPowered && resultA.lampLevel > 0 ? 'Terdapat gelembung gas di sekitar elektroda akibat reaksi elektrokimia.' : 'Tidak tampak gelembung gas.'}
@@ -859,7 +890,7 @@ export default function DualSolutionCompare({ user, onOpenJournal }) {
               <div className="rep-col">
                 <h4>Pengamatan Makroskopik: {solutionB.name}</h4>
                 <p>
-                  <strong>Lampu:</strong> {isPowered ? (resultB.lampLevel === 0 ? 'Padam sama sekali' : resultB.lampLevel === 1 ? 'Menyala sangat redup' : resultB.lampLevel === 2 ? 'Menyala redup' : 'Menyala terang benderang') : 'Rangkaian belum dihubungkan.'}
+                  <strong>Lampu:</strong> {isPowered ? (resultB.lampLevel === 0 ? 'Padam' : resultB.lampLevel >= 3 ? 'Menyala terang (kuning penuh)' : 'Menyala redup (kuning pucat)') : 'Rangkaian belum dihubungkan.'}
                 </p>
                 <p>
                   <strong>Gelembung Gas:</strong> {isPowered && resultB.lampLevel > 0 ? 'Terdapat gelembung gas di sekitar elektroda akibat reaksi elektrokimia.' : 'Tidak tampak gelembung gas.'}
