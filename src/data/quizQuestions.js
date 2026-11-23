@@ -2,6 +2,7 @@ const quizQuestions = [
   {
     id: 'm2-q1',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'analisis-daya-hantar-listrik',
     pertanyaan:
       'Dalam pengujian daya hantar listrik, larutan P menghasilkan lampu terang dan banyak gelembung gas, larutan Q menghasilkan lampu redup dan sedikit gelembung gas, sedangkan larutan R tidak menyalakan lampu dan tidak menghasilkan gelembung gas. Jika alat berfungsi dengan baik dan konsentrasi larutan dibuat sama, kesimpulan yang paling tepat adalah ...',
@@ -24,6 +25,7 @@ const quizQuestions = [
   {
     id: 'm3-q1',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'pengaruh-pengenceran-terhadap-ionisasi',
     pertanyaan:
       'Seorang siswa mengencerkan larutan CH₃COOH dengan menambahkan air. Setelah pengenceran, derajat ionisasinya meningkat. Namun, daya hantar listrik spesifik larutan tidak selalu meningkat. Penjelasan yang paling tepat untuk fenomena tersebut adalah ...',
@@ -49,6 +51,7 @@ const quizQuestions = [
   {
     id: 'm1-q1',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'analisis-daya-hantar-senyawa-ionik',
     pertanyaan:
       'Seorang siswa menyatakan bahwa kristal NaCl dapat menghantarkan listrik karena tersusun atas ion Na⁺ dan Cl⁻. Pernyataan tersebut dikritik oleh temannya. Analisis yang paling tepat terhadap pernyataan tersebut adalah ...',
@@ -75,6 +78,7 @@ const quizQuestions = [
   {
     id: 'm3-q2',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'perbedaan-ionisasi-dan-disosiasi',
     pertanyaan:
       'Perhatikan proses berikut: (1) NaCl(s) → Na⁺(aq) + Cl⁻(aq) dan (2) CH₃COOH(aq) + H₂O(l) ⇌ CH₃COO⁻(aq) + H₃O⁺(aq). Analisis yang tepat mengenai kedua proses tersebut adalah ...',
@@ -99,6 +103,7 @@ const quizQuestions = [
   {
     id: 'm2-q2',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'evaluasi-rancangan-eksperimen',
     pertanyaan:
       'Seorang peneliti ingin membandingkan daya hantar listrik larutan NaCl dan CH₃COOH. Agar hasil percobaan dapat digunakan untuk membandingkan kemampuan kedua larutan dalam menghantarkan listrik secara adil, rancangan percobaan yang paling tepat adalah ...',
@@ -125,6 +130,7 @@ const quizQuestions = [
   {
     id: 'm3-q3',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'analisis-model-partikel-larutan',
     pertanyaan:
       'Tiga model partikel larutan ditampilkan. Model P menunjukkan hampir seluruh partikel berupa ion positif dan negatif. Model Q menunjukkan sebagian besar berupa molekul netral dengan sedikit ion. Model R hanya menunjukkan molekul netral. Interpretasi yang paling tepat adalah ...',
@@ -148,6 +154,7 @@ const quizQuestions = [
   {
     id: 'm1-q2',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'hubungan-kelarutan-dan-daya-hantar',
     pertanyaan:
       'Larutan sukrosa dapat terbentuk ketika gula dilarutkan dalam air. Namun, larutan tersebut tidak menyalakan lampu pada alat uji daya hantar listrik. Seorang siswa menyimpulkan bahwa semua zat yang larut dalam air merupakan elektrolit. Evaluasi yang paling tepat terhadap kesimpulan tersebut adalah ...',
@@ -170,6 +177,7 @@ const quizQuestions = [
   {
     id: 'm1-q3',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'perbandingan-pembawa-muatan',
     pertanyaan:
       'Logam tembaga dan larutan NaCl sama-sama dapat menghantarkan arus listrik. Namun, mekanisme penghantaran listrik pada keduanya berbeda. Penjelasan yang paling tepat adalah ...',
@@ -196,6 +204,7 @@ const quizQuestions = [
   {
     id: 'm3-q4',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'analisis-klasifikasi-larutan',
     pertanyaan:
       'Empat zat diuji dalam air. NaCl menghasilkan banyak ion, CH₃COOH menghasilkan sedikit ion dan masih menyisakan molekul netral, sukrosa tetap berupa molekul netral, sedangkan HCl menghasilkan banyak ion melalui reaksi dengan air. Kesimpulan yang paling tepat adalah ...',
@@ -223,6 +232,7 @@ const quizQuestions = [
   {
     id: 'm2-q3',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'evaluasi-validitas-pengujian',
     pertanyaan:
       'Suatu larutan tidak menyalakan lampu dan tidak menunjukkan gelembung gas ketika diuji menggunakan alat uji elektrolit. Sebelum menyimpulkan bahwa larutan tersebut merupakan nonelektrolit, tindakan paling tepat yang harus dilakukan adalah ...',
@@ -249,6 +259,7 @@ const quizQuestions = [
   {
     id: 'm1-q4',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'komponen-larutan',
     pertanyaan: 'Dalam larutan garam, komponen yang jumlahnya lebih banyak dan berfungsi melarutkan NaCl disebut ...',
     opsi: [
@@ -267,6 +278,7 @@ const quizQuestions = [
   {
     id: 'm1-q5',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'konsentrasi-larutan',
     pertanyaan: 'Sebanyak 0,20 mol zat dilarutkan hingga volume akhir larutan 0,50 L. Berapakah molaritas larutan tersebut?',
     opsi: [
@@ -286,6 +298,7 @@ const quizQuestions = [
   {
     id: 'm1-q6',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'partikel-larutan-sukrosa',
     pertanyaan: 'Apa yang terutama terjadi pada molekul sukrosa ketika sukrosa larut dalam air?',
     opsi: [
@@ -304,6 +317,7 @@ const quizQuestions = [
   {
     id: 'm1-q7',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'muatan-ion',
     pertanyaan: 'Partikel bermuatan positif yang dapat bergerak dalam larutan disebut ...',
     opsi: [
@@ -322,6 +336,7 @@ const quizQuestions = [
   {
     id: 'm1-q8',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'pelarutan-natrium-klorida',
     pertanyaan: 'Persamaan yang tepat untuk menggambarkan disosiasi natrium klorida dalam air adalah ...',
     opsi: [
@@ -341,6 +356,7 @@ const quizQuestions = [
   {
     id: 'm1-q9',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'larutan-elektrolit',
     pertanyaan: 'Sifat utama suatu larutan elektrolit yang memungkinkannya menghantarkan arus adalah adanya ...',
     opsi: [
@@ -359,6 +375,7 @@ const quizQuestions = [
   {
     id: 'm1-q10',
     modulId: 'modul-1',
+    status: 'published',
     konsep: 'molaritas-dan-pengenceran',
     pertanyaan: 'Jika larutan ditambah air tanpa menambah zat terlarut, apa yang terjadi pada molaritasnya?',
     opsi: [
@@ -378,6 +395,7 @@ const quizQuestions = [
   {
     id: 'm2-q4',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'komponen-alat-uji',
     pertanyaan: 'Apa fungsi utama dua elektroda pada alat uji daya hantar larutan?',
     opsi: [
@@ -396,6 +414,7 @@ const quizQuestions = [
   {
     id: 'm2-q5',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'elektroda-dan-keselamatan',
     pertanyaan: 'Mengapa kedua elektroda tidak boleh saling bersentuhan saat pengujian?',
     opsi: [
@@ -414,6 +433,7 @@ const quizQuestions = [
   {
     id: 'm2-q6',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'kontrol-variabel',
     pertanyaan: 'Dalam percobaan membandingkan dua jenis larutan, variabel bebas yang sengaja diubah adalah ...',
     opsi: [
@@ -432,6 +452,7 @@ const quizQuestions = [
   {
     id: 'm2-q7',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'hasil-uji-elektrolit',
     pertanyaan: 'Pengamatan yang paling kuat mendukung bahwa larutan menghantarkan arus pada alat uji sederhana adalah ...',
     opsi: [
@@ -450,6 +471,7 @@ const quizQuestions = [
   {
     id: 'm2-q8',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'kontrol-positif',
     pertanyaan: 'Larutan NaCl yang telah diketahui sebagai elektrolit digunakan untuk memastikan alat uji bekerja. Dalam percobaan ini NaCl berperan sebagai ...',
     opsi: [
@@ -468,6 +490,7 @@ const quizQuestions = [
   {
     id: 'm2-q9',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'kontaminasi-silang',
     pertanyaan: 'Mengapa elektroda perlu dibilas sebelum digunakan pada sampel larutan berikutnya?',
     opsi: [
@@ -486,6 +509,7 @@ const quizQuestions = [
   {
     id: 'm2-q10',
     modulId: 'modul-2',
+    status: 'published',
     konsep: 'interpretasi-gelembung',
     pertanyaan: 'Gelembung yang muncul pada permukaan elektroda selama pengujian terutama menunjukkan ...',
     opsi: [
@@ -504,6 +528,7 @@ const quizQuestions = [
   {
     id: 'm3-q5',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'asam-basa-bronsted-lowry',
     pertanyaan: 'Pada reaksi CH₃COOH + H₂O ⇌ H₃O⁺ + CH₃COO⁻, partikel yang menerima proton adalah ...',
     opsi: [
@@ -523,6 +548,7 @@ const quizQuestions = [
   {
     id: 'm3-q6',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'derajat-ionisasi',
     pertanyaan: 'Dari 0,20 mol zat mula-mula, sebanyak 0,01 mol terionisasi. Berapakah derajat ionisasinya dalam persen?',
     opsi: [
@@ -542,6 +568,7 @@ const quizQuestions = [
   {
     id: 'm3-q7',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'kesetimbangan-elektrolit-lemah',
     pertanyaan: 'Tanda ⇌ pada persamaan ionisasi asam lemah menunjukkan bahwa ...',
     opsi: [
@@ -560,6 +587,7 @@ const quizQuestions = [
   {
     id: 'm3-q8',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'kuat-dan-encer',
     pertanyaan: 'Pernyataan yang benar tentang larutan HCl encer adalah ...',
     opsi: [
@@ -578,6 +606,7 @@ const quizQuestions = [
   {
     id: 'm3-q9',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'kesetimbangan-asam-lemah',
     pertanyaan: 'Pada pengenceran larutan asam lemah, perubahan yang umumnya terjadi pada derajat ionisasi adalah ...',
     opsi: [
@@ -596,6 +625,7 @@ const quizQuestions = [
   {
     id: 'm3-q10',
     modulId: 'modul-3',
+    status: 'published',
     konsep: 'persamaan-ionisasi-air',
     pertanyaan: 'Persamaan ionisasi asam asetat yang menunjukkan peran air dengan tepat adalah ...',
     opsi: [
@@ -612,6 +642,26 @@ const quizQuestions = [
     caraPengerjaan: 'Tuliskan transfer H⁺ dari CH₃COOH ke H₂O; pasangan hasilnya adalah CH₃COO⁻ dan H₃O⁺.',
     rumus: 'CH₃COOH(aq) + H₂O(l) ⇌ H₃O⁺(aq) + CH₃COO⁻(aq).',
   },
-]
+  {
+    id: 'm1-q-draft',
+    modulId: 'modul-1',
+    status: 'draft',
+    konsep: 'uji-coba-soal-draf',
+    pertanyaan: '[DRAFT] Larutan manakah yang masih dalam tahap pengujian dan belum dipublikasikan ke siswa?',
+    opsi: [
+      { id: 'A', teks: 'Larutan Uji Coba Draf A' },
+      { id: 'B', teks: 'Larutan Uji Coba Draf B' },
+      { id: 'C', teks: 'Larutan Uji Coba Draf C' },
+      { id: 'D', teks: 'Larutan Uji Coba Draf D' },
+      { id: 'E', teks: 'Larutan Uji Coba Draf E' },
+    ],
+    jawabanBenar: 'A',
+    feedbackBenar: 'Benar! Soal ini adalah draf.',
+    feedbackSalah: 'Salah.',
+    pembahasan: 'Soal ini masih berstatus draft sehingga tidak boleh masuk ke kuis aktif siswa.',
+    caraPengerjaan: 'Filter status === published akan mengecualikan soal ini secara otomatis.',
+  },
+];
 
-export default quizQuestions
+export default quizQuestions;
+
