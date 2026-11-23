@@ -121,6 +121,7 @@ export default function Quiz({
     return Boolean(savedState?.finished)
   })
 
+  const [saveStatus, setSaveStatus] = useState(null)
   const [saveError, setSaveError] = useState('')
   const completionReported = useRef(false)
 
@@ -192,17 +193,30 @@ export default function Quiz({
   useEffect(() => {
     if (finished && typeof onComplete === 'function' && !completionReported.current && publishedQuestions.length > 0) {
       completionReported.current = true
-      Promise.resolve().then(() => onComplete({
-        moduleId,
-        moduleTitle: module?.title || moduleId,
-        score: evaluatedData.score,
-        total: publishedQuestions.length,
-        questionVersion: TEACHER_CONFIG.activeQuestionVersion,
-        attemptType: 'evaluation',
-        answers: evaluatedData.answers,
-      })).catch((error) => {
-        setSaveError(error instanceof Error ? error.message : 'Hasil kuis tidak dapat disimpan.')
-      })
+      setSaveStatus('saving')
+      Promise.resolve()
+        .then(() => onComplete({
+          moduleId,
+          moduleTitle: module?.title || moduleId,
+          score: evaluatedData.score,
+          total: publishedQuestions.length,
+          questionVersion: TEACHER_CONFIG.activeQuestionVersion,
+          attemptType: 'evaluation',
+          answers: evaluatedData.answers,
+        }))
+        .then((res) => {
+          if (res && res.success === false) {
+            setSaveStatus('error')
+            setSaveError(res.reason || 'Hasil kuis tidak dapat disimpan ke server.')
+          } else {
+            setSaveStatus('saved')
+            setSaveError('')
+          }
+        })
+        .catch((error) => {
+          setSaveStatus('error')
+          setSaveError(error instanceof Error ? error.message : 'Hasil kuis tidak dapat disimpan ke server.')
+        })
     }
   }, [finished, onComplete, moduleId, module?.title, publishedQuestions.length, evaluatedData])
 
@@ -252,6 +266,7 @@ export default function Quiz({
     setSelectedAnswers({})
     setFinished(false)
     setSaveError('')
+    setSaveStatus(null)
     completionReported.current = false
   }
 
@@ -350,7 +365,23 @@ export default function Quiz({
                 : 'Terus berlatih untuk memperdalam pemahaman konsep kimia! Pelajari pembahasan di bawah ini.'}
             </div>
 
-            {saveError && <p className="quiz-save-error" role="alert">{saveError}</p>}
+            {saveStatus === 'saving' && (
+              <p className="quiz-save-status saving" role="status" style={{ color: '#64748B', textAlign: 'center', margin: '0.8rem 0', fontSize: '0.95rem' }}>
+                ⏳ Sedang menyimpan nilai kuis ke database server...
+              </p>
+            )}
+
+            {saveStatus === 'saved' && (
+              <p className="quiz-save-status success" role="status" style={{ color: '#16A34A', textAlign: 'center', margin: '0.8rem 0', fontSize: '0.95rem', fontWeight: 600 }}>
+                ✓ Nilai kuis berhasil disimpan ke server.
+              </p>
+            )}
+
+            {saveError && (
+              <div className="quiz-save-error" role="alert" style={{ textAlign: 'center', margin: '0.8rem auto', maxWidth: '520px', padding: '0.75rem 1rem', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '8px', color: '#DC2626', fontSize: '0.9rem' }}>
+                <strong>Penyimpanan Gagal:</strong> {saveError}
+              </div>
+            )}
 
             <div className="quiz-actions" style={{ justifyContent: 'center', marginBottom: '2.5rem' }}>
               <button type="button" className="btn-primary" onClick={handleRestart}>

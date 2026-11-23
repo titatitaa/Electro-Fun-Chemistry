@@ -8,7 +8,7 @@ import ExpandedCourse from './components/ExpandedCourse.jsx'
 import VirtualLab from './components/VirtualLab.jsx'
 import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
 import { recordLearningActivity } from './data/learningStore.js'
-import { saveQuizResult } from './auth.js'
+import { saveQuizResult, DEFAULT_CLASS_CODE } from './auth.js'
 
 export default function Home({ user }) {
   const progressKey = `electrofun_progress:${user?.id || 'anonymous'}`
@@ -89,13 +89,14 @@ export default function Home({ user }) {
   }
 
   const handleQuizComplete = async (result) => {
+    let saveResult = null
     if (user?.role === 'student') {
       try {
-        await saveQuizResult({
+        saveResult = await saveQuizResult({
           userId: user.id || user.uid,
           userName: user.name || user.displayName || 'Siswa',
           userEmail: user.email || '',
-          classCode: user.classCode || null,
+          classCode: user.classCode || DEFAULT_CLASS_CODE,
           moduleId: result.moduleId,
           moduleTitle: result.moduleTitle,
           attemptType: result.attemptType || 'evaluation',
@@ -105,7 +106,8 @@ export default function Home({ user }) {
           answers: result.answers || {},
         })
       } catch (err) {
-        console.warn('Gagal sinkronisasi kuis ke database:', err)
+        console.error('Gagal sinkronisasi kuis ke database:', err)
+        throw new Error(err.message || 'Hasil kuis gagal disimpan ke server. Periksa koneksi internet.')
       }
     }
     if (user?.role !== 'guest') {
@@ -115,6 +117,7 @@ export default function Home({ user }) {
         detail: `${result.moduleTitle}: ${result.score}/${result.total} jawaban benar.`,
       }, handleLearningActivity)
     }
+    return saveResult || { success: true, isGuest: true }
   }
 
   const handleOpenJournal = () => {

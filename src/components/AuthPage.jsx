@@ -104,7 +104,14 @@ export default function AuthPage({ onAuthenticated, onPasswordReset, initialErro
   const validate = () => {
     const errors = {}
     if (isRegister && !String(form.name || '').trim()) errors.name = 'Nama lengkap wajib diisi.'
-    if (mode === 'login' && !String(form.identifier || '').trim()) errors.identifier = 'Email atau username wajib diisi.'
+    if (mode === 'login') {
+      const cleanId = String(form.identifier || '').trim()
+      if (!cleanId) {
+        errors.identifier = 'Email wajib diisi.'
+      } else if (!EMAIL_PATTERN.test(cleanId)) {
+        errors.identifier = 'Masukkan alamat email yang valid (contoh: nama@email.com).'
+      }
+    }
     if ((isRegister || isForgot) && !String(form.email || '').trim()) errors.email = 'Email wajib diisi.'
     else if ((isRegister || isForgot) && !EMAIL_PATTERN.test(String(form.email || '').trim())) {
       errors.email = 'Masukkan alamat email yang valid.'
@@ -160,7 +167,22 @@ export default function AuthPage({ onAuthenticated, onPasswordReset, initialErro
         onPasswordReset?.()
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.')
+      const errCode = error?.code || ''
+      let userMsg = error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.'
+      if (errCode === 'auth/invalid-credential' || errCode === 'auth/wrong-password' || errCode === 'auth/user-not-found') {
+        userMsg = 'Email atau kata sandi yang Anda masukkan salah.'
+      } else if (errCode === 'auth/invalid-email') {
+        userMsg = 'Format email tidak valid.'
+      } else if (errCode === 'auth/email-already-in-use') {
+        userMsg = 'Email ini sudah terdaftar. Silakan login atau gunakan email lain.'
+      } else if (errCode === 'auth/weak-password') {
+        userMsg = 'Kata sandi terlalu lemah. Gunakan minimal 6 karakter.'
+      } else if (errCode === 'auth/too-many-requests') {
+        userMsg = 'Terlalu banyak percobaan gagal. Silakan tunggu beberapa saat sebelum mencoba lagi.'
+      } else if (errCode === 'auth/network-request-failed') {
+        userMsg = 'Gagal terhubung ke server. Periksa koneksi internet Anda.'
+      }
+      setMessage(userMsg)
     } finally {
       setLoading(false)
     }
@@ -262,8 +284,8 @@ export default function AuthPage({ onAuthenticated, onPasswordReset, initialErro
                   placeholder="nama@email.com" autoComplete="email" error={fieldErrors.email} maxLength={254} />
               )}
               {mode === 'login' && (
-                <Field label="Email atau username" id="identifier" value={form.identifier || ''} onChange={updateField}
-                  placeholder="nama@email.com atau username" autoComplete="username" error={fieldErrors.identifier} maxLength={254} />
+                <Field label="Email" id="identifier" type="email" value={form.identifier || ''} onChange={updateField}
+                  placeholder="nama@email.com" autoComplete="email" error={fieldErrors.identifier} maxLength={254} />
               )}
               {(mode === 'login' || isRegister || isReset) && (
                 <>
