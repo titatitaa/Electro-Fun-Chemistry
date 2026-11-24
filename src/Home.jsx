@@ -350,8 +350,10 @@ export default function Home({ user }) {
       )}
       {activeModal === 'quiz-page' && (
         <Quiz
-          key={quizModuleId || 'module-picker'}
+          key={`${user?.id || user?.uid || 'guest'}_${quizModuleId || 'module-picker'}`}
           moduleId={quizModuleId}
+          user={user}
+          userId={user?.id || user?.uid}
           onSelectModule={setQuizModuleId}
           onClose={closeModal}
           onComplete={handleQuizComplete}
@@ -560,7 +562,10 @@ export default function Home({ user }) {
             {/* Content for Kuis */}
             {activeModal === 'kuis' && (
               <Quiz
+                key={`${user?.id || user?.uid || 'guest'}_${quizModuleId || 'module-picker'}`}
                 moduleId={quizModuleId}
+                user={user}
+                userId={user?.id || user?.uid}
                 onSelectModule={setQuizModuleId}
                 onClose={closeModal}
                 onComplete={handleQuizComplete}

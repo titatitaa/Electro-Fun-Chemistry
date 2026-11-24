@@ -1,23 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { courseModules, quizQuestions } from '../data/database.js'
 import { TEACHER_CONFIG } from '../config/teacherConfig.js'
+import {
+  clearQuizDraft,
+  getSavedQuizDraft,
+  resolveQuizUserNamespace,
+  sanitizeQuestion,
+  saveQuizDraft,
+} from '../utils/quizStorage.js'
 import './Quiz.css'
-
-export function getSavedQuizState(moduleId) {
-  if (!moduleId) return null
-  try {
-    const raw = localStorage.getItem(`quiz_${moduleId}`) || localStorage.getItem(`quiz-${moduleId}`)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') {
-        return parsed
-      }
-    }
-  } catch {
-    // Ignore error
-  }
-  return null
-}
 
 function getQuestionText(q) {
   return q?.question || q?.pertanyaan || ''
@@ -45,25 +36,11 @@ function getExplanation(q) {
   return q?.explanation || q?.pembahasan || ''
 }
 
-/**
- * 2. SANITIZE: Menghapus jawabanBenar, answer, pembahasan, caraPengerjaan, rumus
- * sebelum soal dipakai saat siswa mengerjakan kuis.
- * Yang boleh dipakai saat mengerjakan hanya: id, soal, pilihan jawaban, modulId.
- */
-export function sanitizeQuestion(q) {
-  if (!q) return null
-  return {
-    id: q.id,
-    modulId: q.modulId,
-    pertanyaan: q.pertanyaan || q.question || '',
-    question: q.question || q.pertanyaan || '',
-    opsi: q.opsi || q.options || [],
-    options: q.options || q.opsi || [],
-  }
-}
-
 export default function Quiz({
   moduleId = null,
+  user = null,
+  userId = null,
+  questionVersion = null,
   questions: propQuestions = null,
   onSelectModule = null,
   onClose = null,
@@ -90,31 +67,31 @@ export default function Quiz({
 
   const questionsList = sanitizedQuestions
 
-  const savedState = getSavedQuizState(moduleId)
+  // Isolasi Namespace Pengguna & Versi Soal (AD09-04)
+  const activeUserNamespace = useMemo(() => {
+    return resolveQuizUserNamespace(user || userId)
+  }, [user, userId])
+
+  const activeVersion = questionVersion || TEACHER_CONFIG.activeQuestionVersion || 'v1.0'
+
+  const savedState = useMemo(() => {
+    return getSavedQuizDraft({
+      moduleId,
+      userOrId: activeUserNamespace,
+      questionVersion: activeVersion,
+      validQuestionIds: publishedQuestions.map((q) => q.id),
+    })
+  }, [moduleId, activeUserNamespace, activeVersion, publishedQuestions])
 
   const [questionIndex, setQuestionIndex] = useState(() => {
     const idx = savedState?.questionIndex
-    return typeof idx === 'number' && !isNaN(idx) && idx >= 0 ? idx : 0
+    const maxIdx = Math.max(0, publishedQuestions.length - 1)
+    return typeof idx === 'number' && !isNaN(idx) && idx >= 0 && idx <= maxIdx ? idx : 0
   })
 
-  // 3. LOCALSTORAGE: Hanya simpan { questionId, selectedAnswerId }
+  // 3. LOCALSTORAGE: Hanya simpan { questionId, selectedAnswerId } dengan namespace akun
   const [selectedAnswers, setSelectedAnswers] = useState(() => {
-    const map = {}
-    if (Array.isArray(savedState?.answers)) {
-      savedState.answers.forEach((item) => {
-        if (item?.questionId && item?.selectedAnswerId) {
-          map[item.questionId] = item.selectedAnswerId
-        }
-      })
-    } else if (savedState?.userAnswers && typeof savedState.userAnswers === 'object') {
-      // Dukungan kompatibilitas backward dari state lama jika ada
-      Object.entries(savedState.userAnswers).forEach(([k, v]) => {
-        if (v?.selectedOptionId) {
-          map[k] = v.selectedOptionId
-        }
-      })
-    }
-    return map
+    return savedState?.answersMap || {}
   })
 
   const [finished, setFinished] = useState(() => {
@@ -125,26 +102,21 @@ export default function Quiz({
   const [saveError, setSaveError] = useState('')
   const completionReported = useRef(false)
 
-  // 3. LOCALSTORAGE: Jangan pernah simpan correctAnswerId, pembahasan, rumus, caraPengerjaan ke localStorage.
-  // Yang boleh disimpan hanya: { questionId, selectedAnswerId } beserta index progres.
+  // 3. LOCALSTORAGE: Simpan dengan isolasi user namespace dan versi soal
   useEffect(() => {
-    if (!moduleId) return
-    try {
-      const answersToSave = Object.entries(selectedAnswers).map(([qId, ansId]) => ({
-        questionId: qId,
-        selectedAnswerId: ansId,
-      }))
-      const stateToSave = {
-        questionIndex,
-        answers: answersToSave,
-        finished,
-      }
-      localStorage.setItem(`quiz_${moduleId}`, JSON.stringify(stateToSave))
-      localStorage.setItem(`quiz-${moduleId}`, JSON.stringify(stateToSave))
-    } catch {
-      // Ignore error
-    }
-  }, [moduleId, questionIndex, selectedAnswers, finished])
+    if (!moduleId || !activeUserNamespace) return
+    // Jika kuis sudah selesai, draf sudah dibersihkan saat submit; jangan simpan draf lagi
+    if (finished) return
+
+    saveQuizDraft({
+      userOrId: activeUserNamespace,
+      moduleId,
+      questionVersion: activeVersion,
+      questionIndex,
+      selectedAnswers,
+      finished: false,
+    })
+  }, [moduleId, activeUserNamespace, activeVersion, questionIndex, selectedAnswers, finished])
 
   // 4. PEMBAHASAN DITUNDA: Evaluasi dan pembahasan HANYA dihitung saat kuis telah disubmit (finished === true).
   // Selama pengerjaan berlangsung, correctAnswer tidak pernah dihitung di memori komponen.
@@ -200,7 +172,7 @@ export default function Quiz({
           moduleTitle: module?.title || moduleId,
           score: evaluatedData.score,
           total: publishedQuestions.length,
-          questionVersion: TEACHER_CONFIG.activeQuestionVersion,
+          questionVersion: activeVersion,
           attemptType: 'evaluation',
           answers: evaluatedData.answers,
         }))
@@ -218,7 +190,7 @@ export default function Quiz({
           setSaveError(error instanceof Error ? error.message : 'Hasil kuis tidak dapat disimpan ke server.')
         })
     }
-  }, [finished, onComplete, moduleId, module?.title, publishedQuestions.length, evaluatedData])
+  }, [finished, onComplete, moduleId, module?.title, publishedQuestions.length, evaluatedData, activeVersion])
 
   // 4. PEMBAHASAN DITUNDA: Selama mengerjakan, jangan hitung correctAnswer di memori komponen.
   // currentQuestion adalah sanitizedQuestion (tanpa kunci jawaban & tanpa pembahasan)
@@ -248,20 +220,22 @@ export default function Quiz({
     }
   }
 
-  // 4. PEMBAHASAN DITUNDA: Tombol Submit / Lihat Hasil memicu status finished
+  // 4. PEMBAHASAN DITUNDA: Tombol Submit / Lihat Hasil memicu status finished dan membersihkan draf
   const handleSubmitQuiz = () => {
     setFinished(true)
+    clearQuizDraft({
+      userOrId: activeUserNamespace,
+      moduleId,
+      questionVersion: activeVersion,
+    })
   }
 
   const handleRestart = () => {
-    try {
-      if (moduleId) {
-        localStorage.removeItem(`quiz_${moduleId}`)
-        localStorage.removeItem(`quiz-${moduleId}`)
-      }
-    } catch {
-      // Ignore error
-    }
+    clearQuizDraft({
+      userOrId: activeUserNamespace,
+      moduleId,
+      questionVersion: activeVersion,
+    })
     setQuestionIndex(0)
     setSelectedAnswers({})
     setFinished(false)

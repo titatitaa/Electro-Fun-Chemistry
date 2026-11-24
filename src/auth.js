@@ -39,6 +39,10 @@ import {
   isAuthorizedTeacherEmail,
   isValidClassCode,
 } from './config/teacherConfig.js'
+import {
+  clearGuestQuizDrafts,
+  clearLegacyQuizDrafts,
+} from './utils/quizStorage.js'
 
 export const DEFAULT_CLASS_CODE = TEACHER_CONFIG.defaultClassCode
 export const DEFAULT_CLASS_NAME = TEACHER_CONFIG.defaultClassName
@@ -350,6 +354,10 @@ export async function logoutUser() {
   } catch (err) {
     console.warn('Gagal signOut Firebase:', err)
   } finally {
+    // Bersihkan draf sesi tamu dan draf unowned legacy saat logout (AD09-04)
+    clearGuestQuizDrafts()
+    clearLegacyQuizDrafts()
+
     localStorage.removeItem(LOCAL_SESSION_KEY)
     sessionStorage.removeItem(SESSION_KEY)
     sessionStorage.removeItem(GUEST_SESSION_KEY)
