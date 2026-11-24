@@ -19,6 +19,112 @@ globalThis.sessionStorage = {
   clear: () => sessionStore.clear(),
 }
 
+// In-memory Firestore & Auth mock state for isolated testing
+const usersMap = new Map()
+const quizSubmissionsMap = new Map()
+let currentAuth = null
+
+const testAdapter = {
+  auth: {
+    get currentUser() {
+      return currentAuth
+    },
+    authStateReady: async () => currentAuth,
+  },
+  db: { type: 'firestore' },
+  createUserWithEmailAndPassword: async (_auth, email, _password) => {
+    const uid = `uid-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    currentAuth = { uid, email, displayName: email.split('@')[0] }
+    return { user: currentAuth }
+  },
+  signInWithEmailAndPassword: async (_auth, email, _password) => {
+    const found = Array.from(usersMap.values()).find((u) => u.email.toLowerCase() === email.toLowerCase())
+    const uid = found ? found.id : `uid-${Date.now()}`
+    currentAuth = { uid, email, displayName: found ? found.name : email.split('@')[0] }
+    return { user: currentAuth }
+  },
+  signOut: async () => {
+    currentAuth = null
+  },
+  updateProfile: async (user, { displayName }) => {
+    if (user) user.displayName = displayName
+    if (currentAuth && currentAuth.uid === user.uid) currentAuth.displayName = displayName
+  },
+  onAuthStateChanged: (_auth, callback) => {
+    callback(currentAuth)
+    return () => {}
+  },
+  doc: (_db, col, id) => ({ collectionName: col, id }),
+  collection: (_db, col) => ({ collectionName: col }),
+  setDoc: async (docRef, data, _options) => {
+    if (docRef.collectionName === 'quiz_submissions') {
+      quizSubmissionsMap.set(docRef.id, { ...data, id: docRef.id })
+    } else if (docRef.collectionName === 'users') {
+      const existing = usersMap.get(docRef.id) || {}
+      usersMap.set(docRef.id, { ...existing, ...data, id: docRef.id })
+    }
+    return data
+  },
+  getDoc: async (docRef) => {
+    if (docRef.collectionName === 'users') {
+      const item = usersMap.get(docRef.id)
+      return {
+        id: docRef.id,
+        exists: () => Boolean(item),
+        data: () => (item ? { ...item } : undefined),
+      }
+    }
+    return { id: docRef.id, exists: () => false, data: () => undefined }
+  },
+  updateDoc: async (docRef, data) => {
+    if (docRef.collectionName === 'users') {
+      const existing = usersMap.get(docRef.id) || {}
+      usersMap.set(docRef.id, { ...existing, ...data, id: docRef.id })
+    }
+    return data
+  },
+  query: (colRef, ...constraints) => ({ colRef, constraints }),
+  where: (field, op, value) => ({ type: 'where', field, op, value }),
+  limit: (n) => ({ type: 'limit', n }),
+  getDocs: async (q) => {
+    const colName = q.colRef ? q.colRef.collectionName : q.collectionName
+    if (colName === 'users') {
+      let list = Array.from(usersMap.values())
+      if (q.constraints) {
+        for (const c of q.constraints) {
+          if (c.type === 'where') {
+            list = list.filter((u) => u[c.field] === c.value)
+          }
+        }
+      }
+      return {
+        empty: list.length === 0,
+        docs: list.map((u) => ({ id: u.id, data: () => ({ ...u }) })),
+      }
+    }
+    if (colName === 'quiz_submissions') {
+      let list = Array.from(quizSubmissionsMap.values())
+      if (q.constraints) {
+        for (const c of q.constraints) {
+          if (c.type === 'where') {
+            list = list.filter((s) => s[c.field] === c.value)
+          }
+        }
+      }
+      return {
+        empty: list.length === 0,
+        docs: list.map((s) => ({ id: s.id, data: () => ({ ...s }) })),
+      }
+    }
+    return { empty: true, docs: [] }
+  },
+  serverTimestamp: () => new Date().toISOString(),
+}
+
+// Hubungkan test adapter sebelum import auth
+const { setFirebaseTestAdapter } = await import('../src/firebase.js')
+setFirebaseTestAdapter(testAdapter)
+
 // Now dynamically import auth and teacherConfig
 const {
   registerUser,
@@ -167,6 +273,8 @@ async function runAllTests() {
 
   // Skenario 8: Guru membuka data kelas
   console.log('\n--- Skenario 8-11: Guru Membaca Data & Detail Jawaban ---')
+  // Login kembali sebagai guru resmi sebelum membaca data kelas guru (RBAC check)
+  currentAuth = { uid: teacher.id, email: teacher.email, displayName: teacher.name }
   const classData = await getTeacherClassData(DEFAULT_CLASS_CODE)
   assert(classData.students.length === 2, `Guru melihat tepat 2 siswa terdaftar (Budi & Siti), aktual: ${classData.students.length}`)
   assert(classData.submissions.length === 2, `Guru melihat 2 submisi kuis diterima server, aktual: ${classData.submissions.length}`)
