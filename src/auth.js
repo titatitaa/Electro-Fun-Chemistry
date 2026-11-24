@@ -146,6 +146,7 @@ export async function registerUser({ name, username, email, className, school = 
   // 3. Simpan data lengkap ke Cloud Firestore (koleksi "users")
   const userDocData = {
     id: firebaseUser.uid,
+    uid: firebaseUser.uid,
     name: cleanName,
     username: cleanUsername,
     email: cleanEmail,
@@ -161,6 +162,7 @@ export async function registerUser({ name, username, email, className, school = 
 
   const activeUser = {
     id: firebaseUser.uid,
+    uid: firebaseUser.uid,
     name: cleanName,
     username: cleanUsername,
     email: cleanEmail,
@@ -182,9 +184,34 @@ export async function registerUser({ name, username, email, className, school = 
  * Jika identifier bukan email, sistem mencari email terkait di Firestore sebelum memanggil Firebase Auth.
  */
 export async function loginUser({ identifier, password, remember = true }) {
-  const cleanId = String(identifier || '').trim()
-  if (!cleanId || !password) {
-    throw new Error('Masukkan email atau username dan kata sandi.')
+  const cleanEmail = normalizeEmail(identifier)
+  if (!cleanEmail || !password) {
+    throw new Error('Masukkan email dan kata sandi.')
+  }
+
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!EMAIL_PATTERN.test(cleanEmail)) {
+    throw new Error('Format email tidak valid. Masukkan alamat email yang benar (contoh: nama@email.com).')
+  }
+
+  let credential
+  try {
+    credential = await signInWithEmailAndPassword(auth, cleanEmail, password)
+  } catch (err) {
+    const code = err?.code || ''
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+      throw new Error('Email atau kata sandi yang Anda masukkan salah.')
+    }
+    if (code === 'auth/too-many-requests') {
+      throw new Error('Terlalu banyak percobaan gagal. Silakan tunggu beberapa saat sebelum mencoba lagi.')
+    }
+    if (code === 'auth/network-request-failed') {
+      throw new Error('Gagal terhubung ke server. Periksa koneksi internet Anda.')
+    }
+    if (code === 'auth/invalid-email') {
+      throw new Error('Format email tidak valid.')
+    }
+    throw new Error(err.message || 'Gagal masuk ke akun. Silakan coba lagi.')
   }
 
   // 1. Resolusi identifier: Email langsung atau pencarian Username
@@ -229,7 +256,6 @@ export async function loginUser({ identifier, password, remember = true }) {
   }
 
   // 3. Autentikasi resmi via Firebase Auth
-  let credential
   try {
     credential = await signInWithEmailAndPassword(auth, targetEmail, password)
   } catch (authErr) {
@@ -253,7 +279,7 @@ export async function loginUser({ identifier, password, remember = true }) {
   let className = role === 'teacher' ? 'Guru Pengajar' : 'X'
   let name = firebaseUser.displayName || targetEmail.split('@')[0]
   let username = normalizeUsername(name)
-  let classCode = role === 'teacher' ? DEFAULT_CLASS_CODE : null
+  let classCode = role === 'teacher' ? DEFAULT_CLASS_CODE : DEFAULT_CLASS_CODE
   let school = ''
 
   try {
@@ -264,7 +290,12 @@ export async function loginUser({ identifier, password, remember = true }) {
       if (data.username) username = data.username
       if (data.className) className = data.className
       if (data.school) school = data.school
-      if (data.classCode) classCode = data.classCode
+      // Pertahankan kode kelas yang sudah ada, berikan fallback default jika sebelumnya null
+      if (data.classCode) {
+        classCode = data.classCode
+      } else if (role === 'student') {
+        classCode = DEFAULT_CLASS_CODE
+      }
 
       // Perlindungan server-side role: verifikasi ulang role terhadap whitelist resmi
       role = enforceUserRole(firebaseUser.email, data.role)
@@ -289,6 +320,7 @@ export async function loginUser({ identifier, password, remember = true }) {
 
   const activeUser = {
     id: firebaseUser.uid,
+    uid: firebaseUser.uid,
     name,
     username,
     email: firebaseUser.email,
@@ -445,7 +477,7 @@ export function subscribeToAuth(callback) {
       let className = role === 'teacher' ? 'Guru Pengajar' : 'X'
       let name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Pengguna'
       let username = normalizeUsername(name)
-      let classCode = role === 'teacher' ? DEFAULT_CLASS_CODE : null
+      let classCode = DEFAULT_CLASS_CODE
       let school = ''
 
       try {
@@ -456,9 +488,9 @@ export function subscribeToAuth(callback) {
           if (data.username) username = data.username
           if (data.className) className = data.className
           if (data.school) school = data.school
-          if (data.classCode) classCode = data.classCode
-          role = enforceUserRole(firebaseUser.email, data.role)
-          if (role === 'student' && !classCode) {
+          if (data.classCode) {
+            classCode = data.classCode
+          } else if (role === 'student') {
             classCode = DEFAULT_CLASS_CODE
           }
         }
@@ -468,6 +500,7 @@ export function subscribeToAuth(callback) {
 
       const user = {
         id: firebaseUser.uid,
+        uid: firebaseUser.uid,
         name,
         username,
         email: firebaseUser.email,
@@ -715,7 +748,7 @@ export async function submitQuizSubmission({
     userId,
     userName: userName || 'Siswa',
     userEmail: userEmail || '',
-    classCode: classCode || null,
+    classCode: classCode || DEFAULT_CLASS_CODE,
     moduleId,
     moduleTitle: moduleTitle || moduleId,
     attemptType,
