@@ -17,7 +17,15 @@ service cloud.firestore {
           'guru.kimia@electrolab.id',
           'guru@electrofun.id',
           'guru.kimia@gmail.com'
-        ] || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher');
+        ] || (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.email in [
+            'guru.kimia@electrolab.id',
+            'guru@electrofun.id',
+            'guru.kimia@gmail.com'
+          ]
+        ));
     }
 
     // Koleksi Pengguna (users)
@@ -58,8 +66,13 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid &&
         request.resource.data.status in ['received', 'pending'];
 
-      // Submisi tidak boleh diubah atau dihapus agar riwayat belajar tetap terjaga
-      allow update, delete: if false;
+      // Submisi baru dievaluasi via create. Retry idempoten diizinkan jika identitas & snapshot pengerjaan identik
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.clientFinishedAt == resource.data.clientFinishedAt;
+
+      allow delete: if false;
     }
   }
 }

@@ -70,7 +70,10 @@ function Field({
 }
 
 export default function AuthPage({ onAuthenticated, onPasswordReset, initialError = '' }) {
-  const resetToken = new URLSearchParams(window.location.search).get('reset') || ''
+  const resetToken =
+    new URLSearchParams(window.location.search).get('oobCode') ||
+    new URLSearchParams(window.location.search).get('reset') ||
+    ''
   const [mode, setMode] = useState(resetToken ? 'reset' : 'login')
   const [form, setForm] = useState({
     name: '',
@@ -250,8 +253,8 @@ export default function AuthPage({ onAuthenticated, onPasswordReset, initialErro
                   <Field label="Username" id="username" value={form.username} onChange={updateField}
                     placeholder="Contoh: siswa.kimia10" autoComplete="username" error={fieldErrors.username} maxLength={24} />
                   <div className="auth-register-row">
-                    <Field label="Kelas" id="className" value={form.className} onChange={updateField}
-                      placeholder="Contoh: X-A" autoComplete="off" error={fieldErrors.className} maxLength={40} />
+                    <Field label="Kelas Asal di Sekolah (Rombel)" id="className" value={form.className} onChange={updateField}
+                      placeholder="Contoh: X-1 atau X MIPA" autoComplete="off" error={fieldErrors.className} maxLength={40} />
                     <Field label="Asal sekolah (opsional)" id="school" value={form.school} onChange={updateField}
                       placeholder="Nama sekolah" autoComplete="organization" maxLength={120} />
                   </div>

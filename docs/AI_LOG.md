@@ -58,4 +58,63 @@
   - Uji Regresi: Tab *"Meja eksperimen"* dan *"LKPD & data"* berfungsi normal dengan NaCl 0,10 M.
   - `tests/systemTest.js`: Seluruh 20 skenario pengujian RBAC, kuis, dan data siswa tetap **100% PASS**.
 
+---
+
+## 6. Audit dan Perbaikan Keamanan Autentikasi & Penyimpanan Cloud (`src/auth.js`) (23 November 2026)
+- **Cabang Git:** `fitur-mode-bandingkan`
+- **File yang Diubah/Dibuat:**
+  - `src/auth.js` (Audit menyeluruh, RBAC server-side, login email & username, reset password riil Firebase, validasi sesi berpatokan Firebase Auth, dan submisi kuis idempoten + retry).
+  - `src/firebase.js` (Konfigurasi fallback aman, export password helpers: `confirmPasswordReset`, `verifyPasswordResetCode`, `updatePassword`, serta live binding exports & test adapter).
+  - `firestore.rules` (Perketat fungsi `isTeacher()` dengan verifikasi email whitelist ganda, batasan immutable field pada `/users/{userId}`, serta izin update pengerjaan idempoten pada `/quiz_submissions`).
+  - `src/components/AuthPage.jsx` (Dukungan query param `oobCode` bawaan email action code Firebase Authentication).
+  - `tests/authAuditTest.js` (15 skenario pengujian audit baru: RBAC whitelist, reset password riil, login email & username, validasi sesi Firebase, dan idempotensi retry kuis).
+  - `tests/systemTest.js` (Penyesuaian mock adapter, 20 skenario pengujian sistem tetap berjalan mulus).
+- **Rincian Perbaikan yang Diterapkan:**
+  1. **Penguatan RBAC (Role-Based Access Control):**
+     - Mengimplementasikan `enforceUserRole(email, requestedRole)` yang secara tegas menolak upaya eskalasi privilege ke role `teacher` untuk email di luar whitelist resmi.
+     - Memperketat `firestore.rules` agar evaluasi `isTeacher()` memvalidasi token email dan dokumen user terhadap whitelist resmi `['guru.kimia@electrolab.id', 'guru@electrofun.id', 'guru.kimia@gmail.com']`.
+     - Melindungi `getTeacherClassData` dengan verifikasi otorisasi guru sebelum mengambil data kelas.
+  2. **Perbaikan `resetPassword()` Menggunakan Firebase Authentication Riil:**
+     - Mengganti fungsi dummy dengan integrasi `confirmPasswordReset(auth, resetCode, password)` untuk tautan email `oobCode` serta `updatePassword(auth.currentUser, password)` untuk pembaruan sesi login aktif.
+     - Menyediakan pemetaan error Firebase ke Bahasa Indonesia (`auth/expired-action-code`, `auth/invalid-action-code`, `auth/weak-password`).
+     - Menyediakan fungsi pendukung `verifyResetCode(token)` via `verifyPasswordResetCode`.
+  3. **Sistem Login Ganda (Alamat Email & Username):**
+     - Memeriksa apakah `identifier` merupakan email (mengandung `@`) atau username.
+     - Jika berupa username, sistem melakukan query ke Firestore (`where('username', '==', cleanUsername)`) untuk menemukan email terkait secara aman sebelum memanggil `signInWithEmailAndPassword`.
+     - Menangani error kredensial dengan pesan yang informatif.
+  4. **Validasi Sesi Pengguna Berpatokan ke Firebase Authentication:**
+     - Status login akun resmi tidak lagi hanya bersumber dari `localStorage` atau `sessionStorage`.
+     - `getCurrentUser()` dan `subscribeToAuth()` secara ketat berpatokan pada `auth.currentUser` / `onAuthStateChanged`.
+     - Jika Firebase Auth berstatus `null`, cache sesi lama di `localStorage` otomatis dibersihkan untuk mencegah unauthorized state (mode tamu mandiri tetap aman terisolasi di `sessionStorage`).
+  5. **Penyimpanan Hasil Kuis Idempoten & Konfirmasi Firestore:**
+     - Menggunakan ID Dokumen deterministik (`submissionId` atau `sub_${userId}_${moduleId}_${clientFinishedAt}`) dengan operasi `setDoc(..., { merge: true })`.
+     - Transmisi ulang / retry (hingga 3x dengan backoff) dijamin idempoten tanpa menghasilkan dokumen duplikat di Firestore.
+     - Status berhasil HANYA dikembalikan setelah Firestore mengonfirmasi penyimpanan.
+- **Hasil Pengujian & Verifikasi:**
+  - `node tests/authAuditTest.js`: **15/15 PASS (100%)**.
+  - `node tests/systemTest.js`: **20/20 PASS (100%)**.
+  - `npx oxlint src/auth.js`: **0 warnings, 0 errors**.
+  - `npm run build`: **Berhasil (1.85s, 81 modul)** tanpa error.
+
+---
+
+## 7. Implementasi Tahap 3: Perbaikan Asosiasi Kelas Siswa (`KIMIA-X1`) (24 November 2026)
+- **Cabang Git:** `fitur-mode-bandingkan`
+- **File yang Diubah:**
+  - `src/auth.js`:
+    - `registerUser()`: Mengaitkan `classCode` siswa baru secara otomatis ke `DEFAULT_CLASS_CODE` (`'KIMIA-X1'`), dengan `className` tetap menyimpan rombel sekolah asal.
+    - `reconcileStudentSubmissions()`: Menambahkan helper aman yang hanya memperbarui `classCode` pada riwayat kuis lama milik siswa bersangkutan tanpa menyentuh skor, jawaban, waktu pengerjaan, atau data siswa lain.
+    - `joinClass()`: Memanggil rekonsiliasi kuis lama saat siswa bergabung/memperbarui kelas.
+    - `loginUser()` & `getCurrentUser()`: Menambahkan *auto-healing* untuk akun siswa lama yang belum pernah memiliki `classCode` (tanpa menimpa akun yang sengaja keluar via `leftClassAt`).
+  - `src/components/AuthPage.jsx`:
+    - Mengubah label registrasi menjadi *"Kelas Asal di Sekolah (Rombel)"* dengan placeholder *"Contoh: X-1 atau X MIPA"* agar tidak rancu dengan kode kelas guru.
+  - `tests/authAuditTest.js`:
+    - Menambahkan 8 skenario pengujian asosiasi kelas: otomatisasi siswa baru, pemisahan `className` & `classCode`, auto-healing siswa lama, isolasi profil, integritas nilai kuis lama, isolasi data siswa lain, integritas akun guru, dan siklus join/leave class.
+- **Hasil Pengujian & Verifikasi:**
+  - `node tests/authAuditTest.js`: **23/23 PASS (100%)**.
+  - `node tests/systemTest.js`: **20/20 PASS (100%)**.
+  - `npx oxlint src/auth.js`: **0 warnings, 0 errors**.
+  - `npm run build`: **Berhasil (1.09s, 81 modul)**.
+
+
 
