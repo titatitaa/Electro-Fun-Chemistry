@@ -1,0 +1,193 @@
+/* ==========================================================
+   ToolsGrid Component Styling
+   Electro-Fun-Chemistry Design System
+   ========================================================== */
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Tool Card Button */
+.tool-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+  padding: 1.5rem 1.15rem;
+  background: var(--color-white, #ffffff);
+  border: 1.5px solid rgba(32, 56, 100, 0.09);
+  border-radius: var(--radius-lg, 18px);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(32, 56, 100, 0.06));
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  box-sizing: border-box;
+  text-decoration: none;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform var(--transition-fast, 0.18s ease),
+              box-shadow var(--transition-fast, 0.18s ease),
+              border-color var(--transition-fast, 0.18s ease),
+              background-color var(--transition-fast, 0.18s ease);
+}
+
+/* Hover State */
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md, 0 10px 22px rgba(32, 56, 100, 0.12));
+  border-color: rgba(22, 166, 161, 0.35);
+  background-color: #ffffff;
+}
+
+/* Active State */
+.tool-card:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: var(--shadow-sm, 0 3px 8px rgba(32, 56, 100, 0.08));
+}
+
+/* Keyboard Focus Accessibility */
+.tool-card:focus-visible {
+  outline: 3px solid var(--color-teal, #16a6a1);
+  outline-offset: 3px;
+  border-color: var(--color-teal, #16a6a1);
+}
+
+/* Tool Shape / Icon Container */
+.tool-shape {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md, 14px);
+  font-size: 1.65rem;
+  line-height: 1;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+
+.tool-card:hover .tool-shape {
+  transform: scale(1.08) rotate(2deg);
+}
+
+/* Tool Title */
+.tool-card h3 {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--color-navy, #203864);
+  line-height: 1.3;
+  transition: color 0.18s ease;
+  word-break: break-word;
+}
+
+.tool-card:hover h3 {
+  color: var(--color-teal, #16a6a1);
+}
+
+/* Tool Description */
+.tool-card p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-muted, #5a6679);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* ==========================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================== */
+
+/* Large Tablet / Small Desktop (3 Columns) */
+@media (max-width: 1024px) {
+  .tools-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+
+  .tool-card {
+    padding: 1.35rem 1rem;
+  }
+}
+
+/* Tablet (2 Columns) */
+@media (max-width: 768px) {
+  .tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.95rem;
+  }
+
+  .tool-card {
+    padding: 1.25rem 0.85rem;
+  }
+
+  .tool-shape {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tool-card h3 {
+    font-size: 0.98rem;
+  }
+
+  .tool-card p {
+    font-size: 0.78rem;
+  }
+}
+
+/* Mobile & Small Screens (2 Columns, safe for 375px and below) */
+@media (max-width: 480px) {
+  .tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .tool-card {
+    padding: 1rem 0.6rem;
+    border-radius: var(--radius-md, 14px);
+  }
+
+  .tool-shape {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-sm, 10px);
+    font-size: 1.35rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .tool-card h3 {
+    font-size: 0.88rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .tool-card p {
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .tool-card,
+  .tool-shape,
+  .tool-card h3 {
+    transition: none !important;
+    transform: none !important;
+  }
+}

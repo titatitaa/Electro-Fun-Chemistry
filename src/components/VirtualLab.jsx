@@ -322,7 +322,7 @@ function DigitalWorksheet({ notes, setNotes, observations, studentName, onClearO
   )
 }
 
-export default function VirtualLab({ onClose, onOpenJournal, user }) {
+export default function VirtualLab({ onClose, onOpenJournal, user, initialTab = 'experiment' }) {
   const studentId = user?.id || user?.email || 'anonymous'
   const logKey = getUserLabLogKey(studentId)
   const notesKey = getUserLabNotesKey(studentId)
@@ -339,7 +339,7 @@ export default function VirtualLab({ onClose, onOpenJournal, user }) {
   const [powered, setPowered] = useState(false)
   const [mode, setMode] = useState('macro')
   const [zoom, setZoom] = useState(1)
-  const [activeTab, setActiveTab] = useState('experiment')
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [activeStage, setActiveStage] = useState(0)
   const [prediction, setPrediction] = useState('')
   const [notes, setNotesState] = useState(() => readStored(notesKey, { hypothesis: '', conclusion: '' }))

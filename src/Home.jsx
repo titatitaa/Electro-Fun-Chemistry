@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Navbar from './components/Navbar.jsx'
 import HeroSection from './components/HeroSection.jsx'
+import ToolsGrid from './components/ToolsGrid.jsx'
 import TopicCards from './components/TopicCards.jsx'
 import ModuleLesson from './components/ModuleLesson.jsx'
 import Quiz from './components/Quiz.jsx'
@@ -10,7 +11,7 @@ import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
 import { recordLearningActivity } from './data/learningStore.js'
 import { saveQuizResult, DEFAULT_CLASS_CODE } from './auth.js'
 
-export default function Home({ user }) {
+export default function Home({ user, onOpenTeacherDashboard }) {
   const progressKey = `electrofun_progress:${user?.id || 'anonymous'}`
   const [activeNav, setActiveNav] = useState('beranda')
   const [activeModal, setActiveModal] = useState(null) // 'modul-1', 'modul-2', 'modul-3', 'kuis', 'lab'
@@ -133,6 +134,43 @@ export default function Home({ user }) {
     setActiveModal('quiz-page')
   }
 
+  const handleSelectTool = (toolId) => {
+    switch (toolId) {
+      case 'materi':
+        handleSelectModule('modul-1')
+        break
+      case 'virtual-lab':
+        handleOpenLab()
+        break
+      case 'kuis':
+        handleStartQuiz()
+        break
+      case 'lkpd':
+        setActiveModal('virtual-lab:worksheet')
+        break
+      case 'simulasi-ion':
+        handleOpenLearningFeatures('molecular-explorer')
+        break
+      case 'grafik':
+        setActiveModal('virtual-lab:compare')
+        break
+      case 'video':
+        window.open(
+          'https://www.youtube.com/results?search_query=larutan+elektrolit+dan+nonelektrolit+kimia+SMA',
+          '_blank',
+          'noopener,noreferrer'
+        )
+        break
+      case 'panel-guru':
+        if (user?.role === 'teacher' && typeof onOpenTeacherDashboard === 'function') {
+          onOpenTeacherDashboard()
+        }
+        break
+      default:
+        break
+    }
+  }
+
   const closeModal = () => {
     setActiveModal(null)
     setQuizModuleId(null)
@@ -235,6 +273,23 @@ export default function Home({ user }) {
             )}
           </div>
         </div>
+      </section>
+
+      {/* Quick Access Tools Grid */}
+      <section className="container" style={{ margin: '2.5rem auto 1.5rem' }} aria-labelledby="tools-grid-heading">
+        <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 1.75rem' }}>
+          <div className="section-pill-tag" style={{ display: 'inline-flex', marginBottom: '0.5rem' }}>
+            <span>Pusat Alat &amp; Fitur Belajar</span>
+          </div>
+          <h2 id="tools-grid-heading" style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--color-navy)', marginBottom: '0.4rem' }}>
+            Menu &amp; Fitur Interaktif
+          </h2>
+          <p style={{ fontSize: '0.94rem', color: 'var(--color-text-muted)' }}>
+            Akses langsung ke seluruh instrumen belajar: materi interaktif, laboratorium virtual, kuis, simulasi partikel, dan panduan belajar.
+          </p>
+        </div>
+
+        <ToolsGrid user={user} onSelectTool={handleSelectTool} />
       </section>
 
       {/* 3. Three Topic Module Cards */}
@@ -359,7 +414,15 @@ export default function Home({ user }) {
           onComplete={handleQuizComplete}
         />
       )}
-      {activeModal === 'virtual-lab' && <VirtualLab user={user} onClose={closeModal} onOpenJournal={handleOpenJournal} />}
+      {activeModal?.startsWith('virtual-lab') && (
+        <VirtualLab
+          key={activeModal}
+          user={user}
+          onClose={closeModal}
+          onOpenJournal={handleOpenJournal}
+          initialTab={activeModal.includes(':') ? activeModal.split(':')[1] : 'experiment'}
+        />
+      )}
       {(activeModal === 'learning-tools' || activeModal?.startsWith('learning-tools:')) && (
         <LearningFeatureHub
           user={user}
@@ -371,7 +434,7 @@ export default function Home({ user }) {
       )}
 
       {/* Legacy quick preview */}
-      {activeModal && !activeModal.startsWith('module-page:') && !activeModal.startsWith('learning-tools') && activeModal !== 'quiz-page' && activeModal !== 'virtual-lab' && (
+      {activeModal && !activeModal.startsWith('module-page:') && !activeModal.startsWith('learning-tools') && activeModal !== 'quiz-page' && !activeModal.startsWith('virtual-lab') && (
         <div
           className="modal-backdrop"
           onClick={closeModal}

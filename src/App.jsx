@@ -232,7 +232,10 @@ function App() {
       </div>
 
       {/* Main Website ElectroFun Chemistry */}
-      <Home user={session.user} />
+      <Home
+        user={session.user}
+        onOpenTeacherDashboard={() => setShowTeacherDashboard(true)}
+      />
 
       {/* Halaman / Modal Khusus Panel Guru (Role-Protected) */}
       {showTeacherDashboard && isTeacher && (

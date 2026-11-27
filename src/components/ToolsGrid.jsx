@@ -1,76 +1,97 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import './ToolsGrid.css'
 
-const tools = [
+const TOOLS = [
   {
+    id: 'materi',
     title: 'Materi',
     desc: 'Makro - Partikel - Simbol',
     icon: '📚',
     color: '#4f46e5',
-    to: '/materi',
   },
   {
+    id: 'virtual-lab',
     title: 'Virtual Lab',
     desc: '15 Larutan & Sensor',
     icon: '🧪',
     color: '#059669',
-    to: '/lab',
   },
   {
+    id: 'kuis',
     title: 'Kuis',
     desc: '10 Soal + Pembahasan',
     icon: '📝',
     color: '#d97706',
-    to: '/kuis',
   },
   {
+    id: 'lkpd',
     title: 'LKPD',
     desc: 'Catatan Lab',
     icon: '📋',
     color: '#dc2626',
-    to: '/lkpd',
   },
   {
+    id: 'simulasi-ion',
     title: 'Simulasi Ion',
     desc: 'Visualisasi Partikel',
     icon: '⚡',
     color: '#0891b2',
-    to: '/simulasi',
   },
   {
+    id: 'grafik',
     title: 'Grafik',
     desc: 'Konduktivitas',
     icon: '📊',
     color: '#7c3aed',
-    to: '/grafik',
   },
   {
+    id: 'video',
     title: 'Video',
     desc: 'Konsep Elektrolit',
     icon: '🎬',
     color: '#db2777',
-    to: '/video',
   },
   {
+    id: 'panel-guru',
     title: 'Panel Guru',
     desc: 'Rekap & Analisis',
     icon: '👩‍🏫',
     color: '#475569',
-    to: '/guru',
+    teacherOnly: true,
   },
 ]
 
-export default function ToolsGrid() {
+export default function ToolsGrid({ user = null, onSelectTool }) {
+  const displayedTools = TOOLS.filter(
+    (tool) => !tool.teacherOnly || user?.role === 'teacher'
+  )
+
+  const handleSelect = (toolId) => {
+    if (typeof onSelectTool === 'function') {
+      onSelectTool(toolId)
+    }
+  }
+
   return (
     <div className="tools-grid">
-      {tools.map((tool) => (
-        <Link key={tool.to} to={tool.to} className="tool-card">
-          <div className="tool-shape" style={{ backgroundColor: tool.color }}>
+      {displayedTools.map((tool) => (
+        <button
+          key={tool.id}
+          type="button"
+          className="tool-card"
+          onClick={() => handleSelect(tool.id)}
+          aria-label={`${tool.title}: ${tool.desc}`}
+        >
+          <div
+            className="tool-shape"
+            style={{ backgroundColor: tool.color }}
+            aria-hidden="true"
+          >
             {tool.icon}
           </div>
           <h3>{tool.title}</h3>
           <p>{tool.desc}</p>
-        </Link>
+        </button>
       ))}
     </div>
   )
