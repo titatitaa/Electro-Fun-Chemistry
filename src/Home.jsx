@@ -5,6 +5,7 @@ import ToolsGrid from './components/ToolsGrid.jsx'
 import TopicCards from './components/TopicCards.jsx'
 import ModuleLesson from './components/ModuleLesson.jsx'
 import Quiz from './components/Quiz.jsx'
+import RiwayatNilai from './components/RiwayatNilai.jsx'
 import ExpandedCourse from './components/ExpandedCourse.jsx'
 import VirtualLab from './components/VirtualLab.jsx'
 import LearningFeatureHub from './components/learning/LearningFeatureHub.jsx'
@@ -63,6 +64,14 @@ export default function Home({ user, onOpenTeacherDashboard }) {
     }
     if (targetId === 'laboratorium') {
       setActiveModal('virtual-lab')
+      return
+    }
+    if (targetId === 'riwayat-nilai') {
+      if (user?.role === 'teacher' && typeof onOpenTeacherDashboard === 'function') {
+        onOpenTeacherDashboard()
+      } else {
+        setActiveModal('riwayat-nilai')
+      }
       return
     }
     const elem = document.getElementById(targetId)
@@ -203,42 +212,16 @@ export default function Home({ user, onOpenTeacherDashboard }) {
 
       {/* Anonymous Learning Progress Status Bar */}
       <section className="container" style={{ margin: '1rem auto 0' }} aria-label="Status Progres Belajar">
-        <div
-          style={{
-            background: 'var(--color-white)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.15rem 1.75rem',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1.5px solid rgba(32, 56, 100, 0.08)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: 'var(--color-teal-light)',
-                color: 'var(--color-teal)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '800',
-                fontSize: '1rem'
-              }}
-            >
+        <div className="learning-progress-status-bar">
+          <div className="learning-progress-info">
+            <div className="learning-progress-badge">
               {completedModules.length}/3
             </div>
             <div>
-              <div style={{ fontSize: '0.94rem', fontWeight: '800', color: 'var(--color-navy)' }}>
-                Progres Belajar Siswa (Tersimpan Lokal & Anonim)
+              <div className="learning-progress-title">
+                Progres Belajar Siswa (Tersimpan Lokal &amp; Anonim)
               </div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+              <div className="learning-progress-desc">
                 {completedModules.length === 0
                   ? 'Kamu belum menyelesaikan modul. Ayo mulai perjalanan dari Modul 1!'
                   : completedModules.length === 3
@@ -248,7 +231,7 @@ export default function Home({ user, onOpenTeacherDashboard }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="learning-progress-actions">
             <button
               type="button"
               className="btn-primary"
@@ -414,6 +397,13 @@ export default function Home({ user, onOpenTeacherDashboard }) {
           onComplete={handleQuizComplete}
         />
       )}
+      {activeModal === 'riwayat-nilai' && (
+        <RiwayatNilai
+          user={user}
+          onClose={closeModal}
+          onStartQuiz={() => handleStartQuiz()}
+        />
+      )}
       {activeModal?.startsWith('virtual-lab') && (
         <VirtualLab
           key={activeModal}
@@ -434,7 +424,7 @@ export default function Home({ user, onOpenTeacherDashboard }) {
       )}
 
       {/* Legacy quick preview */}
-      {activeModal && !activeModal.startsWith('module-page:') && !activeModal.startsWith('learning-tools') && activeModal !== 'quiz-page' && !activeModal.startsWith('virtual-lab') && (
+      {activeModal && !activeModal.startsWith('module-page:') && !activeModal.startsWith('learning-tools') && activeModal !== 'quiz-page' && !activeModal.startsWith('virtual-lab') && activeModal !== 'riwayat-nilai' && (
         <div
           className="modal-backdrop"
           onClick={closeModal}

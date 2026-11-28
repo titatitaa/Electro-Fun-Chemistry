@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { auth, db, collection, query, where, getDocs, orderBy } from '../firebase.js'
+import { auth } from '../firebase.js'
+import { getStudentSubmissions } from '../auth.js'
 import './Quiz.css'
 
 function formatTanggal(raw) {
@@ -33,12 +34,23 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const isGuest = user?.isGuest || user?.role === 'guest'
+
   useEffect(() => {
     let isMounted = true
 
     async function fetchSubmissions() {
       setLoading(true)
       setError('')
+
+      if (isGuest) {
+        if (isMounted) {
+          setSubmissions([])
+          setLoading(false)
+        }
+        return
+      }
+
       try {
         const currentUid = auth.currentUser?.uid || user?.uid || user?.id
 
@@ -50,28 +62,11 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
           return
         }
 
-        // Data diambil dari Firestore collection 'quiz_submissions', filter 'userId == auth.currentUser.uid', urutkan dari yang terbaru
-        const q = query(
-          collection(db, 'quiz_submissions'),
-          where('userId', '==', auth.currentUser?.uid || currentUid),
-          orderBy('serverReceivedAt', 'desc')
-        )
-
-        const snapshot = await getDocs(q)
-        const list = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-
-        // Pastikan terurut dari yang paling baru
-        list.sort((a, b) => {
-          const timeA = new Date(a.serverReceivedAt || a.submittedAt || a.clientFinishedAt || 0).getTime()
-          const timeB = new Date(b.serverReceivedAt || b.submittedAt || b.clientFinishedAt || 0).getTime()
-          return timeB - timeA
-        })
+        // Ambil riwayat khusus siswa bersangkutan menggunakan fungsi resmi dari auth.js
+        const list = await getStudentSubmissions(currentUid)
 
         if (isMounted) {
-          setSubmissions(list)
+          setSubmissions(list || [])
           setLoading(false)
         }
       } catch (err) {
@@ -88,7 +83,7 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
     return () => {
       isMounted = false
     }
-  }, [user])
+  }, [user, isGuest])
 
   return (
     <div className="quiz-page" role="dialog" aria-modal="true" aria-labelledby="riwayat-title">
@@ -106,7 +101,7 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
           <div className="quiz-heading">
             <span className="apparatus-status-pill weak">Progres Belajar</span>
             <h1 id="riwayat-title">Riwayat Nilai Kuis</h1>
-            <p>Daftar seluruh riwayat pengerjaan kuis yang telah kamu selesaikan.</p>
+            <p>Daftar seluruh riwayat pengerjaan kuis evaluasi yang telah kamu selesaikan.</p>
           </div>
 
           {loading && (
@@ -130,7 +125,33 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
             </div>
           )}
 
-          {!loading && !error && submissions.length === 0 && (
+          {!loading && !error && isGuest && (
+            <div className="quiz-question-card" style={{ textAlign: 'center', padding: '3.5rem 1.5rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }} aria-hidden="true">
+                👤
+              </div>
+              <h2 style={{ fontSize: '1.25rem', color: 'var(--color-navy)', marginBottom: '0.4rem', fontWeight: 800 }}>
+                Akun Tamu (Mode Latihan Bebas)
+              </h2>
+              <p style={{ color: 'var(--color-text-muted)', maxWidth: '440px', margin: '0 auto 1.5rem', fontSize: '0.92rem', lineHeight: 1.6 }}>
+                Hasil pengerjaan kuis untuk akun tamu tidak disimpan ke server cloud. Silakan masuk atau daftar akun resmi agar seluruh riwayat nilai dan evaluasimu tercatat secara permanen.
+              </p>
+              <div className="quiz-actions" style={{ justifyContent: 'center' }}>
+                {onStartQuiz && (
+                  <button type="button" className="btn-primary" onClick={onStartQuiz}>
+                    Mulai Kerjakan Kuis
+                  </button>
+                )}
+                {onClose && (
+                  <button type="button" className="btn-secondary" onClick={onClose}>
+                    Kembali ke Beranda
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && !isGuest && submissions.length === 0 && (
             <div className="quiz-question-card" style={{ textAlign: 'center', padding: '3.5rem 1.5rem' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }} aria-hidden="true">
                 📝
@@ -151,7 +172,7 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
             </div>
           )}
 
-          {!loading && !error && submissions.length > 0 && (
+          {!loading && !error && !isGuest && submissions.length > 0 && (
             <>
               {/* Ringkasan Skor Terkini */}
               <div
@@ -195,39 +216,17 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
                 </div>
               </div>
 
-              {/* Tabel Riwayat Nilai */}
-              <div className="quiz-question-card" style={{ padding: '0', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table
-                    style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      textAlign: 'left',
-                      fontSize: '0.92rem',
-                    }}
-                  >
+              {/* Tabel Riwayat Nilai - Desktop */}
+              <div className="history-desktop quiz-question-card">
+                <div className="history-table-wrapper">
+                  <table className="history-table">
                     <thead>
-                      <tr
-                        style={{
-                          background: 'var(--color-blue-panel, #F0F5FA)',
-                          borderBottom: '2px solid rgba(32, 56, 100, 0.1)',
-                        }}
-                      >
-                        <th style={{ padding: '0.95rem 1.25rem', color: 'var(--color-navy)', fontWeight: 800 }}>
-                          No
-                        </th>
-                        <th style={{ padding: '0.95rem 1.25rem', color: 'var(--color-navy)', fontWeight: 800 }}>
-                          Nama Kuis
-                        </th>
-                        <th style={{ padding: '0.95rem 1.25rem', color: 'var(--color-navy)', fontWeight: 800, textAlign: 'center' }}>
-                          Skor
-                        </th>
-                        <th style={{ padding: '0.95rem 1.25rem', color: 'var(--color-navy)', fontWeight: 800, textAlign: 'center' }}>
-                          Total Soal
-                        </th>
-                        <th style={{ padding: '0.95rem 1.25rem', color: 'var(--color-navy)', fontWeight: 800 }}>
-                          Tanggal Mengerjakan
-                        </th>
+                      <tr>
+                        <th>No</th>
+                        <th>Nama Kuis</th>
+                        <th>Skor</th>
+                        <th>Total Soal</th>
+                        <th>Tanggal Mengerjakan</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -237,57 +236,25 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
                         const isHigh = skor >= totalSoal * 0.75
 
                         return (
-                          <tr
-                            key={sub.id || idx}
-                            style={{
-                              borderBottom: '1px solid rgba(32, 56, 100, 0.08)',
-                              transition: 'background 0.15s ease',
-                            }}
-                          >
-                            <td style={{ padding: '1rem 1.25rem', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-                              {idx + 1}
-                            </td>
-                            <td style={{ padding: '1rem 1.25rem' }}>
-                              <strong style={{ color: 'var(--color-navy)', fontSize: '0.95rem' }}>
+                          <tr key={sub.id || idx}>
+                            <td>{idx + 1}</td>
+                            <td>
+                              <strong className="history-title">
                                 {sub.moduleTitle || sub.moduleId || 'Kuis Kimia'}
                               </strong>
                               {sub.questionVersion && (
-                                <span
-                                  style={{
-                                    display: 'inline-block',
-                                    marginLeft: '0.5rem',
-                                    fontSize: '0.74rem',
-                                    color: 'var(--color-text-muted)',
-                                    background: 'rgba(32, 56, 100, 0.06)',
-                                    padding: '1px 6px',
-                                    borderRadius: '4px',
-                                  }}
-                                >
+                                <span className="history-version">
                                   {sub.questionVersion}
                                 </span>
                               )}
                             </td>
-                            <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                              <span
-                                style={{
-                                  display: 'inline-block',
-                                  padding: '0.3rem 0.75rem',
-                                  borderRadius: 'var(--radius-full, 999px)',
-                                  background: isHigh
-                                    ? 'var(--color-green-feedback, #dcfce7)'
-                                    : 'var(--color-coral-light, #fee2e2)',
-                                  color: isHigh ? '#14532d' : '#991b1b',
-                                  fontWeight: 800,
-                                  fontSize: '0.88rem',
-                                }}
-                              >
+                            <td className="history-score-cell">
+                              <span className={`history-score ${isHigh ? 'high' : 'low'}`}>
                                 {skor}
                               </span>
                             </td>
-                            <td style={{ padding: '1rem 1.25rem', textAlign: 'center', color: 'var(--color-text-main)', fontWeight: 600 }}>
-                              {totalSoal}
-                            </td>
-                            <td style={{ padding: '1rem 1.25rem', color: 'var(--color-text-muted)', fontSize: '0.88rem' }}>
+                            <td className="history-total">{totalSoal}</td>
+                            <td className="history-date">
                               {formatTanggal(sub.serverReceivedAt || sub.clientFinishedAt || sub.submittedAt)}
                             </td>
                           </tr>
@@ -298,6 +265,42 @@ export default function RiwayatNilai({ user, onClose, onStartQuiz }) {
                 </div>
               </div>
 
+              {/* Kartu Riwayat Nilai - Mobile */}
+              <div className="history-mobile">
+                {submissions.map((sub, idx) => {
+                  const totalSoal = sub.totalQuestions || sub.total || 10
+                  const skor = sub.score ?? 0
+                  const isHigh = skor >= totalSoal * 0.75
+
+                  return (
+                    <article className="history-mobile-card" key={sub.id || idx}>
+                      <div className="history-mobile-top">
+                        <span className="history-attempt">
+                          Percobaan #{idx + 1}
+                        </span>
+                        <span className={`history-score ${isHigh ? 'high' : 'low'}`}>
+                          {skor} / {totalSoal}
+                        </span>
+                      </div>
+
+                      <h3 className="history-mobile-title">
+                        {sub.moduleTitle || sub.moduleId || 'Kuis Kimia'}
+                      </h3>
+
+                      {sub.questionVersion && (
+                        <span className="history-version">
+                          {sub.questionVersion}
+                        </span>
+                      )}
+
+                      <div className="history-mobile-date">
+                        <span aria-hidden="true">📅</span>
+                        {formatTanggal(sub.serverReceivedAt || sub.clientFinishedAt || sub.submittedAt)}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
               <div className="quiz-actions" style={{ justifyContent: 'center', marginTop: '2rem' }}>
                 {onStartQuiz && (
                   <button type="button" className="btn-primary" onClick={onStartQuiz}>
